@@ -1,0 +1,72 @@
+name: gamevault
+description: "GameVault: plataforma personal para administrar videojuegos jugados y deseados."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Estado (Cubit por defecto, Bloc para flujos complejos)
+  flutter_bloc: ^9.1.1
+  equatable: ^3.0.0
+
+  # Modelado inmutable y serialización
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.12.0
+
+  # Networking (RAWG) con interceptores, caché y deduplicación
+  dio: ^5.11.1
+  flutter_dotenv: ^6.0.1
+
+  # Backend, Auth y observabilidad
+  firebase_core: ^4.15.0
+  firebase_auth: ^6.7.0
+  cloud_firestore: ^6.10.0
+  firebase_crashlytics: ^5.4.0
+  firebase_app_check: ^0.4.8
+  google_sign_in: ^7.2.0
+
+  # Navegación (17.x: compatible con Flutter 3.44 / Dart 3.12)
+  go_router: ^17.3.0
+
+  # Inyección de dependencias
+  get_it: ^9.2.1
+
+  # UI premium
+  google_fonts: ^8.2.1
+  cached_network_image: ^4.0.0
+
+  # Caché persistente local
+  hive_flutter: ^1.1.0
+
+  # Red y IA
+  connectivity_plus: ^6.1.5
+  google_generative_ai: ^0.4.7
+
+# 1.3.x usa @awaitNotRequired, ausente en Dart 3.12 / Flutter 3.44.
+dependency_overrides:
+  material_ui: 1.2.0
+  cupertino_ui: 1.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+  # Codegen: freezed + json_serializable (3.x: compatible con Dart 3.12)
+  build_runner: ^2.15.1
+  freezed: ^3.2.5
+  json_serializable: ^6.14.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - .env
+    - assets/images/

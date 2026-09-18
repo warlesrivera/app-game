@@ -1,0 +1,5 @@
+package com.gamevault.gamevault
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()

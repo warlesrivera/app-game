@@ -1,0 +1,142 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:get_it/get_it.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
+import '../../core/network/api_client.dart';
+import '../../core/network/connectivity_bloc.dart';
+import '../../features/ai_chat/data/datasources/ai_chat_remote_datasource.dart';
+import '../../features/ai_chat/data/providers/gemini_ai_provider.dart';
+import '../../features/ai_chat/data/repositories/game_ai_repository_impl.dart';
+import '../../features/ai_chat/domain/repositories/game_ai_repository.dart';
+import '../../features/ai_chat/domain/usecases/send_ai_message.dart';
+import '../../features/ai_chat/domain/usecases/watch_ai_messages.dart';
+import '../../features/ai_chat/presentation/cubit/ai_chat_cubit.dart';
+import '../../features/auth/data/datasources/auth_remote_datasource.dart';
+import '../../features/auth/data/datasources/firebase_auth_remote_datasource.dart';
+import '../../features/auth/data/datasources/firestore_user_remote_datasource.dart';
+import '../../features/auth/data/datasources/user_remote_datasource.dart';
+import '../../features/auth/data/repositories/auth_repository_impl.dart';
+import '../../features/auth/domain/repositories/auth_repository.dart';
+import '../../features/auth/domain/usecases/sign_in_with_email.dart';
+import '../../features/auth/domain/usecases/sign_in_with_google.dart';
+import '../../features/auth/domain/usecases/sign_out.dart';
+import '../../features/auth/domain/usecases/sign_up_with_email.dart';
+import '../../features/auth/domain/usecases/watch_auth_state.dart';
+import '../../features/auth/presentation/cubit/auth_cubit.dart';
+import '../../features/dashboard/presentation/cubit/dashboard_cubit.dart';
+import '../../features/games/data/datasources/game_local_cache.dart';
+import '../../features/games/data/datasources/hive_game_local_cache.dart';
+import '../../features/games/data/datasources/rawg_remote_datasource.dart';
+import '../../features/games/data/repositories/game_repository_impl.dart';
+import '../../features/games/domain/repositories/game_repository.dart';
+import '../../features/games/domain/usecases/get_discover_games_usecase.dart';
+import '../../features/games/domain/usecases/get_games_by_ids.dart';
+import '../../features/games/domain/usecases/search_games_usecase.dart';
+import '../../features/library/data/datasources/library_remote_datasource.dart';
+import '../../features/library/data/repositories/library_repository_impl.dart';
+import '../../features/library/domain/repositories/library_repository.dart';
+import '../../features/library/domain/usecases/set_game_status.dart';
+import '../../features/library/domain/usecases/watch_library.dart';
+import '../../features/library/presentation/cubit/library_cubit.dart';
+import '../../features/prices/data/repositories/price_repository_impl.dart';
+import '../../features/prices/domain/repositories/price_repository.dart';
+import '../../features/prices/domain/usecases/save_price_alert.dart';
+import '../../features/search/presentation/cubit/search_cubit.dart';
+
+final GetIt getIt = GetIt.instance;
+
+Future<void> configureDependencies() async {
+  if (getIt.isRegistered<AuthCubit>()) {
+    await getIt.reset();
+  }
+
+  final gameCacheBox = Hive.isBoxOpen(HiveGameLocalCache.boxName)
+      ? Hive.box<dynamic>(HiveGameLocalCache.boxName)
+      : await Hive.openBox<dynamic>(HiveGameLocalCache.boxName);
+
+  getIt
+    ..registerLazySingleton(
+      () => ApiClient(
+        baseUrl: dotenv.env['RAWG_BASE_URL'] ?? '',
+        apiKey: dotenv.env['RAWG_API_KEY'] ?? '',
+      ),
+    )
+    ..registerLazySingleton(() => RawgRemoteDataSource(getIt()))
+    ..registerLazySingleton<GameLocalCache>(
+      () => HiveGameLocalCache(gameCacheBox),
+    )
+    ..registerLazySingleton<GameRepository>(
+      () => GameRepositoryImpl(
+        remoteDataSource: getIt(),
+        localCache: getIt(),
+      ),
+    )
+    ..registerLazySingleton(() => GetDiscoverGamesUseCase(getIt()))
+    ..registerLazySingleton(() => SearchGamesUseCase(getIt()))
+    ..registerLazySingleton(() => GetGamesByIds(getIt()))
+    ..registerFactory(() => DashboardCubit(getDiscoverGames: getIt()))
+    ..registerFactory(() => SearchCubit(searchGames: getIt()))
+    ..registerFactory(() => ConnectivityBloc())
+    ..registerLazySingleton<AuthRemoteDataSource>(
+      FirebaseAuthRemoteDataSource.new,
+    )
+    ..registerLazySingleton<UserRemoteDataSource>(
+      FirestoreUserRemoteDataSource.new,
+    )
+    ..registerLazySingleton<AuthRepository>(
+      () => AuthRepositoryImpl(
+        authDataSource: getIt(),
+        userDataSource: getIt(),
+      ),
+    )
+    ..registerLazySingleton(() => WatchAuthState(getIt()))
+    ..registerLazySingleton(() => SignInWithEmail(getIt()))
+    ..registerLazySingleton(() => SignUpWithEmail(getIt()))
+    ..registerLazySingleton(() => SignInWithGoogle(getIt()))
+    ..registerLazySingleton(() => SignOut(getIt()))
+    ..registerLazySingleton(
+      () => AuthCubit(
+        watchAuthState: getIt(),
+        signInWithEmail: getIt(),
+        signUpWithEmail: getIt(),
+        signInWithGoogle: getIt(),
+        signOut: getIt(),
+      ),
+    )
+    ..registerLazySingleton(LibraryRemoteDataSource.new)
+    ..registerLazySingleton<LibraryRepository>(
+      () => LibraryRepositoryImpl(getIt()),
+    )
+    ..registerLazySingleton(() => WatchLibrary(getIt()))
+    ..registerLazySingleton(() => SetGameStatus(getIt()))
+    ..registerLazySingleton<PriceRepository>(
+      () => PriceRepositoryImpl(getIt()),
+    )
+    ..registerLazySingleton(() => SavePriceAlert(getIt()))
+    ..registerFactory(
+      () => LibraryCubit(
+        watchAuthState: getIt(),
+        watchLibrary: getIt(),
+        setGameStatus: getIt(),
+        getGamesByIds: getIt(),
+        savePriceAlert: getIt(),
+      ),
+    )
+    ..registerLazySingleton(AiChatRemoteDataSource.new)
+    ..registerLazySingleton(
+      () => GeminiAiProvider(apiKey: dotenv.env['GEMINI_API_KEY'] ?? ''),
+    )
+    ..registerLazySingleton<GameAIRepository>(
+      () => GameAIRepositoryImpl(remote: getIt(), provider: getIt()),
+    )
+    ..registerLazySingleton(() => SendAiMessage(getIt()))
+    ..registerLazySingleton(() => WatchAiMessages(getIt()))
+    ..registerFactoryParam<AiChatCubit, String, String>(
+      (gameId, gameName) => AiChatCubit(
+        gameId: gameId,
+        gameName: gameName,
+        sendAiMessage: getIt(),
+        watchAiMessages: getIt(),
+      ),
+    );
+}
