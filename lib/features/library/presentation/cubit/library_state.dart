@@ -8,6 +8,7 @@ sealed class LibraryState extends Equatable {
   const LibraryState();
 
   LibraryFilter get filter => LibraryFilter.all;
+  LibraryLayout get layout => LibraryLayout.grid;
   List<LibraryEntry> get entries => const [];
   LibraryStats get stats => const LibraryStats.empty();
   LibraryEntry? entryFor(String gameId) => null;
@@ -21,13 +22,18 @@ final class LibraryInitial extends LibraryState {
 }
 
 final class LibraryLoading extends LibraryState {
-  const LibraryLoading({this.filter = LibraryFilter.all});
+  const LibraryLoading({
+    this.filter = LibraryFilter.all,
+    this.layout = LibraryLayout.grid,
+  });
 
   @override
   final LibraryFilter filter;
+  @override
+  final LibraryLayout layout;
 
   @override
-  List<Object?> get props => [filter];
+  List<Object?> get props => [filter, layout];
 }
 
 final class LibraryLoaded extends LibraryState {
@@ -35,6 +41,7 @@ final class LibraryLoaded extends LibraryState {
     required this.entries,
     required this.games,
     required this.filter,
+    this.layout = LibraryLayout.grid,
   });
 
   @override
@@ -42,6 +49,8 @@ final class LibraryLoaded extends LibraryState {
   final List<LibraryGame> games;
   @override
   final LibraryFilter filter;
+  @override
+  final LibraryLayout layout;
 
   @override
   LibraryStats get stats => LibraryStats.fromEntries(entries);
@@ -61,16 +70,22 @@ final class LibraryLoaded extends LibraryState {
   }
 
   @override
-  List<Object?> get props => [entries, games, filter];
+  List<Object?> get props => [entries, games, filter, layout];
 }
 
 final class LibraryError extends LibraryState {
-  const LibraryError(this.message, {this.filter = LibraryFilter.all});
+  const LibraryError(
+    this.message, {
+    this.filter = LibraryFilter.all,
+    this.layout = LibraryLayout.grid,
+  });
 
   final String message;
   @override
   final LibraryFilter filter;
+  @override
+  final LibraryLayout layout;
 
   @override
-  List<Object?> get props => [message, filter];
+  List<Object?> get props => [message, filter, layout];
 }

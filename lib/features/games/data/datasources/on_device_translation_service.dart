@@ -74,25 +74,18 @@ class OnDeviceTranslationService implements GameTranslator {
     }
 
     final chunks = <String>[];
-    final paragraphs = text.split(RegExp(r'\n\s*\n'));
-    final current = StringBuffer();
-    for (final paragraph in paragraphs) {
-      final piece = paragraph.trim();
-      if (piece.isEmpty) {
-        continue;
+    var remaining = text.trim();
+    while (remaining.length > max) {
+      var cut = remaining.lastIndexOf(RegExp(r'[\n.]'), max);
+      if (cut < max ~/ 2) {
+        cut = max;
       }
-      if (current.isNotEmpty && current.length + piece.length + 2 > max) {
-        chunks.add(current.toString());
-        current.clear();
-      }
-      if (current.isNotEmpty) {
-        current.write('\n\n');
-      }
-      current.write(piece);
+      chunks.add(remaining.substring(0, cut).trim());
+      remaining = remaining.substring(cut).replaceFirst(RegExp(r'^\.\s*'), '').trim();
     }
-    if (current.isNotEmpty) {
-      chunks.add(current.toString());
+    if (remaining.isNotEmpty) {
+      chunks.add(remaining);
     }
-    return chunks.isEmpty ? [text.substring(0, max)] : chunks;
+    return chunks;
   }
 }

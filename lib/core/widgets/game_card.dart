@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../app/theme/app_colors.dart';
 import '../../features/games/domain/models/game.dart';
 import '../utils/platform_icon_mapper.dart';
+import 'game_cover_hero.dart';
 import 'shimmer.dart';
 
 class GameCard extends StatelessWidget {
@@ -49,7 +50,7 @@ class GameCard extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Hero(
+                GameCoverHero(
                   tag: tag,
                   child: Material(
                     color: AppColors.surfaceHigh,
@@ -121,6 +122,78 @@ class GameCard extends StatelessWidget {
       width: width,
       height: height,
       child: card,
+    );
+  }
+}
+
+class GameListRow extends StatelessWidget {
+  const GameListRow({
+    super.key,
+    required this.game,
+    required this.heroTag,
+    required this.onTap,
+  });
+
+  final Game game;
+  final String heroTag;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              GameCoverHero(
+                tag: heroTag,
+                cornerRadius: 12,
+                child: Material(
+                  color: AppColors.surfaceHigh,
+                  borderRadius: BorderRadius.circular(12),
+                  clipBehavior: Clip.antiAlias,
+                  child: SizedBox(
+                    width: 64,
+                    height: 86,
+                    child: _Cover(url: game.coverUrl),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      game.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppColors.onSurface,
+                        fontWeight: FontWeight.w700,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    PlatformIconMapper.row(
+                      slugs: game.platformSlugs,
+                      names: game.platforms,
+                      size: 16,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.onSurfaceMuted,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

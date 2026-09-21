@@ -21,6 +21,7 @@ abstract interface class GameRepository {
     String ordering = '-added',
     String? dates,
     int page = 1,
+    int pageSize = 40,
   });
 
   Future<void> cacheGame(Game game);

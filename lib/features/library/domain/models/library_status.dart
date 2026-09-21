@@ -18,6 +18,8 @@ enum LibraryStatus {
   }
 }
 
+enum LibraryLayout { grid, list }
+
 enum LibraryFilter {
   all,
   playing,

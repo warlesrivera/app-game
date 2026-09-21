@@ -151,13 +151,14 @@ class RawgRemoteDataSource {
     String ordering = '-added',
     String? dates,
     int page = 1,
+    int pageSize = 40,
   }) async {
     try {
       final response = await _apiClient.dio.get<Map<String, dynamic>>(
         '/games',
         queryParameters: {
           'page': page,
-          'page_size': 40,
+          'page_size': pageSize,
           'ordering': ordering,
           'exclude_additions': true,
           if (parentPlatforms != null) 'parent_platforms': parentPlatforms,

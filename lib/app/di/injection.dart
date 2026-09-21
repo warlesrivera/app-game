@@ -23,6 +23,7 @@ import '../../features/auth/domain/usecases/sign_out.dart';
 import '../../features/auth/domain/usecases/sign_up_with_email.dart';
 import '../../features/auth/domain/usecases/watch_auth_state.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
+import '../../features/dashboard/presentation/catalog_collection/catalog_collection_cubit.dart';
 import '../../features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import '../../features/games/data/datasources/game_local_cache.dart';
 import '../../features/games/data/datasources/hive_game_local_cache.dart';
@@ -35,11 +36,10 @@ import '../../features/games/domain/models/game.dart';
 import '../../features/games/domain/repositories/game_guide_repository.dart';
 import '../../features/games/domain/repositories/game_repository.dart';
 import '../../features/games/domain/repositories/game_translator.dart';
+import '../../features/games/domain/usecases/get_catalog_collection.dart';
 import '../../features/games/domain/usecases/get_catalog_rows.dart';
 import '../../features/games/domain/usecases/get_discover_games_usecase.dart';
 import '../../features/games/domain/usecases/get_game_details.dart';
-import '../../features/games/domain/usecases/get_game_guide.dart';
-import '../../features/games/domain/usecases/get_game_videos.dart';
 import '../../features/games/domain/usecases/get_games_by_ids.dart';
 import '../../features/games/domain/usecases/search_games_usecase.dart';
 import '../../features/games/domain/usecases/translate_game_description.dart';
@@ -47,6 +47,7 @@ import '../../features/games/presentation/game_details/game_details_cubit.dart';
 import '../../features/library/data/datasources/library_remote_datasource.dart';
 import '../../features/library/data/repositories/library_repository_impl.dart';
 import '../../features/library/domain/repositories/library_repository.dart';
+import '../../features/library/domain/usecases/remove_game_from_library.dart';
 import '../../features/library/domain/usecases/set_game_status.dart';
 import '../../features/library/domain/usecases/watch_library.dart';
 import '../../features/library/presentation/cubit/library_cubit.dart';
@@ -87,8 +88,8 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton(() => SearchGamesUseCase(getIt()))
     ..registerLazySingleton(() => GetGamesByIds(getIt()))
     ..registerLazySingleton(() => GetGameDetails(getIt()))
-    ..registerLazySingleton(() => GetGameVideos(getIt()))
     ..registerLazySingleton(() => GetCatalogRowsUseCase(getIt()))
+    ..registerLazySingleton(() => GetCatalogCollection(getIt()))
     ..registerLazySingleton(WikipediaGuideRemoteDataSource.new)
     ..registerLazySingleton<GameGuideRepository>(
       () => GameGuideRepositoryImpl(
@@ -97,7 +98,6 @@ Future<void> configureDependencies() async {
         gemini: getIt(),
       ),
     )
-    ..registerLazySingleton(() => GetGameGuide(getIt()))
     ..registerLazySingleton<GameTranslator>(OnDeviceTranslationService.new)
     ..registerLazySingleton(
       () => TranslateGameDescription(
@@ -109,12 +109,17 @@ Future<void> configureDependencies() async {
       (game, _) => GameDetailsCubit(
         preview: game,
         getGameDetails: getIt(),
-        getGameVideos: getIt(),
         translateDescription: getIt(),
-        getGameGuide: getIt(),
       ),
     )
     ..registerFactory(() => DashboardCubit(getCatalogRows: getIt()))
+    ..registerFactoryParam<CatalogCollectionCubit, String, String>(
+      (id, title) => CatalogCollectionCubit(
+        catalogId: id,
+        title: title,
+        getCatalogCollection: getIt(),
+      ),
+    )
     ..registerFactory(() => SearchCubit(searchGames: getIt()))
     ..registerFactory(() => ConnectivityBloc())
     ..registerLazySingleton<AuthRemoteDataSource>(
@@ -151,6 +156,7 @@ Future<void> configureDependencies() async {
     )
     ..registerLazySingleton(() => WatchLibrary(getIt()))
     ..registerLazySingleton(() => SetGameStatus(getIt()))
+    ..registerLazySingleton(() => RemoveGameFromLibrary(getIt()))
     ..registerLazySingleton<PriceRepository>(
       () => PriceRepositoryImpl(getIt()),
     )
@@ -160,6 +166,7 @@ Future<void> configureDependencies() async {
         watchAuthState: getIt(),
         watchLibrary: getIt(),
         setGameStatus: getIt(),
+        removeGameFromLibrary: getIt(),
         getGamesByIds: getIt(),
         savePriceAlert: getIt(),
       ),

@@ -77,6 +77,10 @@ class LibraryRemoteDataSource {
     }, SetOptions(merge: true));
   }
 
+  Future<void> removeGame(String gameId) {
+    return _games.doc(gameId).delete();
+  }
+
   Future<void> setPriceAlert({
     required String gameId,
     required bool enabled,

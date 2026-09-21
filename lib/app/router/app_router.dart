@@ -9,10 +9,12 @@ import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/splash_page.dart';
 import '../../features/ai_chat/presentation/ai_chat_page.dart';
 import '../../features/ai_chat/presentation/cubit/ai_chat_cubit.dart';
+import '../../features/dashboard/presentation/catalog_collection/catalog_collection_cubit.dart';
+import '../../features/dashboard/presentation/catalog_collection/catalog_collection_page.dart';
 import '../../features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import '../../features/dashboard/presentation/dashboard_page.dart';
 import '../../features/games/domain/models/game.dart';
-import '../../features/games/presentation/game_details/game_details_cubit.dart';
+import '../../features/games/presentation/game_details/game_details_flow.dart';
 import '../../features/games/presentation/game_details/game_details_page.dart';
 import '../../features/library/presentation/library_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
@@ -105,6 +107,48 @@ final class AppRouter {
           ],
         ),
         GoRoute(
+          path: catalogCollection,
+          name: 'catalogCollection',
+          pageBuilder: (context, state) {
+            final id = state.pathParameters['id'] ?? '';
+            final title = state.extra is String ? state.extra as String : id;
+            return CustomTransitionPage<void>(
+              key: state.pageKey,
+              transitionDuration: const Duration(milliseconds: 560),
+              reverseTransitionDuration: const Duration(milliseconds: 420),
+              child: BlocProvider(
+                create: (_) => getIt<CatalogCollectionCubit>(
+                  param1: id,
+                  param2: title,
+                )..load(),
+                child: const CatalogCollectionPage(),
+              ),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                final fade = CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                  reverseCurve: Curves.easeInCubic,
+                );
+                return FadeTransition(
+                  opacity: fade,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0.04, 0),
+                      end: Offset.zero,
+                    ).animate(
+                      CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutQuint,
+                      ),
+                    ),
+                    child: child,
+                  ),
+                );
+              },
+            );
+          },
+        ),
+        GoRoute(
           path: gameDetails,
           name: 'gameDetails',
           pageBuilder: (context, state) {
@@ -112,24 +156,50 @@ final class AppRouter {
             final args = GameDetailsArgs.tryParse(state.extra);
             final preview = args?.game ?? Game(id: id, name: 'Juego');
             final heroTag = args?.heroTag ?? 'game-cover-$id';
+            final games = args?.pages ?? [preview];
             return CustomTransitionPage<void>(
               key: state.pageKey,
-              transitionDuration: const Duration(milliseconds: 500),
-              reverseTransitionDuration: const Duration(milliseconds: 420),
-              child: BlocProvider(
-                create: (_) => getIt<GameDetailsCubit>(
-                  param1: preview,
-                  param2: heroTag,
-                )..load(),
-                child: GameDetailsPage(heroTag: heroTag),
+              transitionDuration: const Duration(milliseconds: 720),
+              reverseTransitionDuration: const Duration(milliseconds: 520),
+              child: GameDetailsFlow(
+                games: games,
+                initialIndex: args?.initialIndex ?? 0,
+                heroTag: heroTag,
               ),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(
-                  opacity: CurvedAnimation(
-                    parent: animation,
+                final fadeIn = CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                  reverseCurve: Curves.easeInCubic,
+                );
+                final rise = CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutQuint,
+                  reverseCurve: Curves.easeInCubic,
+                );
+                final dimBehind = Tween<double>(begin: 1, end: 0.88).animate(
+                  CurvedAnimation(
+                    parent: secondaryAnimation,
                     curve: Curves.easeOutCubic,
                   ),
-                  child: child,
+                );
+
+                return FadeTransition(
+                  opacity: dimBehind,
+                  child: FadeTransition(
+                    opacity: fadeIn,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.045),
+                        end: Offset.zero,
+                      ).animate(rise),
+                      child: ScaleTransition(
+                        scale: Tween<double>(begin: 0.97, end: 1).animate(rise),
+                        alignment: Alignment.bottomCenter,
+                        child: child,
+                      ),
+                    ),
+                  ),
                 );
               },
             );
@@ -164,6 +234,7 @@ final class AppRouter {
   static const String library = '/library';
   static const String wishlist = '/wishlist';
   static const String profile = '/profile';
+  static const String catalogCollection = '/catalog/:id';
   static const String gameDetails = '/game/:id';
 
   final AuthCubit _authCubit;

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/utils/platform_icon_mapper.dart';
+import '../../../../core/widgets/game_cover_hero.dart';
 import '../../../../core/widgets/in_app_browser_page.dart';
 import '../../../../core/widgets/shimmer.dart';
 import '../../../library/domain/models/library_entry.dart';
@@ -12,7 +13,6 @@ import '../../../library/domain/models/library_status.dart';
 import '../../../library/presentation/cubit/library_cubit.dart';
 import '../../../library/presentation/cubit/library_state.dart';
 import '../../domain/models/game.dart';
-import '../../domain/models/game_video.dart';
 import 'game_details_cubit.dart';
 import 'game_details_state.dart';
 
@@ -20,10 +20,25 @@ class GameDetailsArgs {
   const GameDetailsArgs({
     required this.game,
     required this.heroTag,
+    this.queue = const [],
   });
 
   final Game game;
   final String heroTag;
+  final List<Game> queue;
+
+  List<Game> get pages {
+    if (queue.length > 1) {
+      return queue;
+    }
+    return [game];
+  }
+
+  int get initialIndex {
+    final pages = this.pages;
+    final index = pages.indexWhere((item) => item.id == game.id);
+    return index < 0 ? 0 : index;
+  }
 
   static GameDetailsArgs? tryParse(Object? extra) {
     if (extra is GameDetailsArgs) {
@@ -43,11 +58,12 @@ void openGameDetails(
   BuildContext context,
   Game game, {
   required String heroTag,
+  List<Game> queue = const [],
 }) {
   context.pushNamed(
     'gameDetails',
     pathParameters: {'id': game.id},
-    extra: GameDetailsArgs(game: game, heroTag: heroTag),
+    extra: GameDetailsArgs(game: game, heroTag: heroTag, queue: queue),
   );
 }
 
@@ -76,133 +92,53 @@ class GameDetailsPage extends StatelessWidget {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
                 sliver: SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        game.name,
-                        style: textTheme.displaySmall?.copyWith(
-                          letterSpacing: -0.8,
-                          fontWeight: FontWeight.w800,
-                          height: 1.1,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      _StatusActions(gameId: game.id),
-                      const SizedBox(height: 16),
-                      _PriceAlertButton(game: game),
-                      const SizedBox(height: 12),
-                      FilledButton.tonalIcon(
-                        onPressed: () {
-                          context.pushNamed(
-                            'aiChat',
-                            pathParameters: {'id': game.id},
-                            extra: game,
-                          );
-                        },
-                        icon: const Icon(Icons.auto_awesome),
-                        label: const Text('Pregúntale a la IA'),
-                      ),
-                      if (state.error != null) ...[
-                        const SizedBox(height: 16),
+                  child: _ContentReveal(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          state.error!,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: AppColors.error,
+                          game.name,
+                          style: textTheme.displaySmall?.copyWith(
+                            letterSpacing: -0.8,
+                            fontWeight: FontWeight.w800,
+                            height: 1.1,
                           ),
                         ),
+                        const SizedBox(height: 20),
+                        _StatusActions(gameId: game.id),
+                        const SizedBox(height: 16),
+                        _PriceAlertButton(game: game),
+                        const SizedBox(height: 12),
+                        FilledButton.tonalIcon(
+                          onPressed: () {
+                            context.pushNamed(
+                              'aiChat',
+                              pathParameters: {'id': game.id},
+                              extra: game,
+                            );
+                          },
+                          icon: const Icon(Icons.auto_awesome),
+                          label: const Text('Pregúntale a la IA'),
+                        ),
+                        if (state.error != null) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            state.error!,
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: AppColors.error,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 24),
+                        _DetailsPanel(state: state),
                       ],
-                      const SizedBox(height: 24),
-                      _DetailsSections(state: state),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-class _DetailsSections extends StatefulWidget {
-  const _DetailsSections({required this.state});
-
-  final GameDetailsState state;
-
-  @override
-  State<_DetailsSections> createState() => _DetailsSectionsState();
-}
-
-class _DetailsSectionsState extends State<_DetailsSections> {
-  int _index = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Wrap(
-          spacing: 8,
-          children: [
-            _SectionChip(
-              label: 'Detalles',
-              selected: _index == 0,
-              onTap: () => setState(() => _index = 0),
-            ),
-            _SectionChip(
-              label: 'Tráilers',
-              selected: _index == 1,
-              onTap: () => setState(() => _index = 1),
-            ),
-            _SectionChip(
-              label: 'Guía',
-              selected: _index == 2,
-              onTap: () {
-                context.read<GameDetailsCubit>().loadGuide();
-                setState(() => _index = 2);
-              },
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        switch (_index) {
-          1 => _TrailerPanel(state: widget.state),
-          2 => _GuidePanel(state: widget.state),
-          _ => _DetailsPanel(state: widget.state),
-        },
-      ],
-    );
-  }
-}
-
-class _SectionChip extends StatelessWidget {
-  const _SectionChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onTap(),
-      selectedColor: AppColors.accent.withValues(alpha: 0.28),
-      backgroundColor: AppColors.surfaceHigh,
-      showCheckmark: false,
-      side: BorderSide(
-        color: selected ? AppColors.accent : AppColors.outline,
-      ),
-      labelStyle: TextStyle(
-        color: selected ? AppColors.onSurface : AppColors.onSurfaceMuted,
-        fontWeight: FontWeight.w600,
       ),
     );
   }
@@ -231,7 +167,10 @@ class _DetailsPanel extends StatelessWidget {
         const SizedBox(height: 28),
         const _SectionTitle('TRÁILERS'),
         const SizedBox(height: 14),
-        _VideosRow(state: state),
+        _YoutubeTrailerCard(
+          gameName: game.name,
+          coverUrl: game.coverUrl,
+        ),
         const SizedBox(height: 28),
         _ScreenshotGallery(urls: game.screenshotUrls),
         if (game.screenshotUrls.isNotEmpty) const SizedBox(height: 28),
@@ -292,130 +231,8 @@ class _DetailsPanel extends StatelessWidget {
   }
 }
 
-class _TrailerPanel extends StatelessWidget {
-  const _TrailerPanel({required this.state});
-
-  final GameDetailsState state;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionTitle('TRÁILERS'),
-        const SizedBox(height: 14),
-        _VideosRow(state: state),
-      ],
-    );
-  }
-}
-
-class _VideosRow extends StatelessWidget {
-  const _VideosRow({required this.state});
-
-  final GameDetailsState state;
-
-  @override
-  Widget build(BuildContext context) {
-    if (state.loadingVideos) {
-      return SizedBox(
-        height: 148,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: 3,
-          separatorBuilder: (_, _) => const SizedBox(width: 12),
-          itemBuilder: (_, _) => const _ShimmerShot(),
-        ),
-      );
-    }
-
-    if (state.videos.isEmpty) {
-      return _YoutubeTrailerFallback(
-        gameName: state.game.name,
-        coverUrl: state.game.coverUrl,
-      );
-    }
-
-    return SizedBox(
-      height: 168,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: state.videos.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          final video = state.videos[index];
-          return _VideoThumbnail(video: video);
-        },
-      ),
-    );
-  }
-}
-
-class _VideoThumbnail extends StatelessWidget {
-  const _VideoThumbnail({required this.video});
-
-  final GameVideo video;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: video.url.isEmpty
-          ? null
-          : () => openInAppWeb(context, video.url, title: video.name),
-      child: SizedBox(
-        width: 260,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    if (video.preview.isNotEmpty)
-                      CachedNetworkImage(
-                        imageUrl: video.preview,
-                        fit: BoxFit.cover,
-                        placeholder: (_, _) => const ColoredBox(
-                          color: AppColors.surfaceHigh,
-                        ),
-                        errorWidget: (_, _, _) => const ColoredBox(
-                          color: AppColors.surfaceHigh,
-                        ),
-                      )
-                    else
-                      const ColoredBox(color: AppColors.surfaceHigh),
-                    const ColoredBox(color: Color(0x66000000)),
-                    const Center(
-                      child: Icon(
-                        Icons.play_circle_fill_rounded,
-                        size: 56,
-                        color: AppColors.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (video.name.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                video.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _YoutubeTrailerFallback extends StatelessWidget {
-  const _YoutubeTrailerFallback({
+class _YoutubeTrailerCard extends StatelessWidget {
+  const _YoutubeTrailerCard({
     required this.gameName,
     required this.coverUrl,
   });
@@ -431,7 +248,7 @@ class _YoutubeTrailerFallback extends StatelessWidget {
         GestureDetector(
           onTap: () => openInAppWeb(
             context,
-            _youtubeSearchUrl(gameName),
+            _youtubeTrailerUrl(gameName),
             title: 'Tráiler',
           ),
           child: SizedBox(
@@ -469,8 +286,7 @@ class _YoutubeTrailerFallback extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          'RAWG no incluye un archivo de tráiler para este juego. '
-          'Lo buscamos en YouTube, dentro de la app.',
+          'Tráiler oficial en YouTube, dentro de la app.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: AppColors.onSurfaceMuted,
           ),
@@ -480,106 +296,14 @@ class _YoutubeTrailerFallback extends StatelessWidget {
   }
 }
 
-class _GuidePanel extends StatelessWidget {
-  const _GuidePanel({required this.state});
-
-  final GameDetailsState state;
-
-  @override
-  Widget build(BuildContext context) {
-    if (state.loadingGuide && state.guide == null) {
-      return const _ShimmerLines();
-    }
-
-    final guide = state.guide;
-    if (guide == null || guide.isEmpty) {
-      return Text(
-        'RAWG no trae walkthroughs. Buscamos un resumen en Wikipedia '
-        'y enlaces a guías externas.',
-        style: Theme.of(context).textTheme.bodyLarge,
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionTitle('GUÍA'),
-        const SizedBox(height: 8),
-        Text(
-          guide.sourceLabel == 'Wikipedia'
-              ? 'Resumen de Wikipedia (RAWG no incluye guías).'
-              : 'Guía de inicio. RAWG no incluye walkthroughs.',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        if (guide.hasText) ...[
-          const SizedBox(height: 16),
-          Text(
-            guide.summary!,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              height: 1.55,
-            ),
-          ),
-        ],
-        const SizedBox(height: 24),
-        const _SectionTitle('MÁS GUÍAS'),
-        const SizedBox(height: 12),
-        if (guide.wikiUrl != null)
-          _GuideLinkButton(
-            label: 'Wikipedia',
-            url: guide.wikiUrl!,
-          ),
-        if (guide.walkthroughUrl != null)
-          _GuideLinkButton(
-            label: 'Walkthroughs en GameFAQs',
-            url: guide.walkthroughUrl!,
-          ),
-        if (guide.ignUrl != null)
-          _GuideLinkButton(
-            label: 'Buscar en IGN',
-            url: guide.ignUrl!,
-          ),
-        if (guide.redditUrl != null)
-          _GuideLinkButton(
-            label: 'Comunidad en Reddit',
-            url: guide.redditUrl!,
-          ),
-      ],
-    );
-  }
-}
-
-class _GuideLinkButton extends StatelessWidget {
-  const _GuideLinkButton({
-    required this.label,
-    required this.url,
-  });
-
-  final String label;
-  final String url;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: OutlinedButton.icon(
-        onPressed: () => openInAppWeb(context, url, title: label),
-        icon: const Icon(Icons.public_rounded),
-        label: Text(label),
-      ),
-    );
-  }
-}
-
-
-bool _hasText(String? value) {
-  return value != null && value.trim().isNotEmpty;
-}
-
-String _youtubeSearchUrl(String gameName) {
+String _youtubeTrailerUrl(String gameName) {
   final query = Uri.encodeQueryComponent('$gameName official trailer');
   return 'https://www.youtube.com/results?search_query=$query';
 }
 
+bool _hasText(String? value) {
+  return value != null && value.trim().isNotEmpty;
+}
 
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle(this.label);
@@ -727,16 +451,74 @@ class _ScreenshotGallery extends StatelessWidget {
       PageRouteBuilder<void>(
         opaque: false,
         barrierColor: const Color(0xE607080B),
-        transitionDuration: const Duration(milliseconds: 280),
+        transitionDuration: const Duration(milliseconds: 420),
+        reverseTransitionDuration: const Duration(milliseconds: 320),
         pageBuilder: (_, animation, _) {
+          final fade = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          );
           return FadeTransition(
-            opacity: animation,
-            child: _ScreenshotLightbox(
-              urls: urls,
-              initialIndex: index,
+            opacity: fade,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.96, end: 1).animate(fade),
+              child: _ScreenshotLightbox(
+                urls: urls,
+                initialIndex: index,
+              ),
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _ContentReveal extends StatefulWidget {
+  const _ContentReveal({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_ContentReveal> createState() => _ContentRevealState();
+}
+
+class _ContentRevealState extends State<_ContentReveal>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 760),
+  )..forward();
+
+  late final Animation<double> _fade = CurvedAnimation(
+    parent: _controller,
+    curve: const Interval(0.12, 1, curve: Curves.easeOutCubic),
+  );
+
+  late final Animation<Offset> _slide = Tween<Offset>(
+    begin: const Offset(0, 0.035),
+    end: Offset.zero,
+  ).animate(
+    CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutQuint,
+    ),
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: widget.child,
       ),
     );
   }
@@ -822,23 +604,6 @@ class _ScreenshotLightboxState extends State<_ScreenshotLightbox> {
   }
 }
 
-class _ShimmerShot extends StatelessWidget {
-  const _ShimmerShot();
-
-  @override
-  Widget build(BuildContext context) {
-    return Shimmer(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: AppColors.surfaceHigh,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const SizedBox(width: 240, height: 148),
-      ),
-    );
-  }
-}
-
 class _ShimmerLines extends StatelessWidget {
   const _ShimmerLines();
 
@@ -866,7 +631,7 @@ class _ShimmerLines extends StatelessWidget {
   }
 }
 
-class _HeroHeader extends StatelessWidget {
+class _HeroHeader extends StatefulWidget {
   const _HeroHeader({
     required this.game,
     required this.heroTag,
@@ -876,41 +641,69 @@ class _HeroHeader extends StatelessWidget {
   final String heroTag;
 
   @override
+  State<_HeroHeader> createState() => _HeroHeaderState();
+}
+
+class _HeroHeaderState extends State<_HeroHeader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 620),
+  )..forward();
+
+  late final Animation<double> _overlay = CurvedAnimation(
+    parent: _controller,
+    curve: const Interval(0.28, 1, curve: Curves.easeOutCubic),
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 360,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Hero(
-            tag: heroTag,
+          GameCoverHero(
+            tag: widget.heroTag,
             child: Material(
               color: AppColors.surfaceHigh,
-              child: _CoverImage(url: game.coverUrl),
+              child: _CoverImage(url: widget.game.coverUrl),
             ),
           ),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0x6607080B),
-                  Color(0x0007080B),
-                  Color(0xF207080B),
-                ],
-                stops: [0.0, 0.45, 1.0],
+          FadeTransition(
+            opacity: _overlay,
+            child: const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0x6607080B),
+                    Color(0x0007080B),
+                    Color(0xF207080B),
+                  ],
+                  stops: [0.0, 0.45, 1.0],
+                ),
               ),
             ),
           ),
           SafeArea(
             child: Align(
               alignment: Alignment.topLeft,
-              child: IconButton(
-                tooltip: 'Volver',
-                onPressed: () => Navigator.of(context).maybePop(),
-                icon: const Icon(Icons.arrow_back_rounded),
-                color: AppColors.onSurface,
+              child: FadeTransition(
+                opacity: _overlay,
+                child: IconButton(
+                  tooltip: 'Volver',
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  color: AppColors.onSurface,
+                ),
               ),
             ),
           ),
@@ -979,6 +772,9 @@ class _StatusActions extends StatelessWidget {
                     status: action.status,
                   );
                 },
+                tooltip: selected == action.status
+                    ? 'Quitar de ${action.status.label}'
+                    : action.status.label,
                 selectedColor: AppColors.accent.withValues(alpha: 0.28),
                 backgroundColor: AppColors.surfaceHigh,
                 labelStyle: TextStyle(

@@ -5,6 +5,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/catalog_games_row.dart';
 import '../../auth/presentation/cubit/auth_cubit.dart';
 import '../../auth/presentation/cubit/auth_state.dart';
+import 'catalog_collection/catalog_collection_page.dart';
 import 'cubit/dashboard_cubit.dart';
 import 'cubit/dashboard_state.dart';
 
@@ -68,6 +69,11 @@ class DashboardPage extends StatelessWidget {
                         title: row.title,
                         games: row.games,
                         heroPrefix: row.id,
+                        onTitleTap: () => openCatalogCollection(
+                          context,
+                          id: row.id,
+                          title: row.title,
+                        ),
                       );
                     },
                   ),

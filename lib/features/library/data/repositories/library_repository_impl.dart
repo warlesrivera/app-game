@@ -21,4 +21,9 @@ class LibraryRepositoryImpl implements LibraryRepository {
   }) {
     return _remote.setStatus(gameId: gameId, status: status);
   }
+
+  @override
+  Future<void> removeGame(String gameId) {
+    return _remote.removeGame(gameId);
+  }
 }

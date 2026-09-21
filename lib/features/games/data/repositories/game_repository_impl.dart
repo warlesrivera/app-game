@@ -105,8 +105,9 @@ class GameRepositoryImpl implements GameRepository {
     String ordering = '-added',
     String? dates,
     int page = 1,
+    int pageSize = 40,
   }) async {
-    final cacheId = '$catalogId-p$page';
+    final cacheId = '$catalogId-p$page-s$pageSize';
     final cached = await localCache.getCatalog(cacheId);
     if (cached != null) {
       return cached;
@@ -119,6 +120,7 @@ class GameRepositoryImpl implements GameRepository {
       ordering: ordering,
       dates: dates,
       page: page,
+      pageSize: pageSize,
     );
     await localCache.saveCatalog(catalogId: cacheId, games: remote);
     return remote;

@@ -132,6 +132,7 @@ class _SearchResults extends StatelessWidget {
             context,
             game,
             heroTag: heroTag,
+            queue: games,
           ),
         );
       },

@@ -39,13 +39,37 @@ class LibraryPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-              child: Text(
-                title.toUpperCase(),
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: AppColors.accent,
-                  letterSpacing: 2.2,
-                ),
+              padding: const EdgeInsets.fromLTRB(12, 8, 4, 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title.toUpperCase(),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: AppColors.accent,
+                        letterSpacing: 2.2,
+                      ),
+                    ),
+                  ),
+                  BlocBuilder<LibraryCubit, LibraryState>(
+                    buildWhen: (previous, current) =>
+                        previous.layout != current.layout,
+                    builder: (context, state) {
+                      final isList = state.layout == LibraryLayout.list;
+                      return IconButton(
+                        tooltip: isList ? 'Ver en cuadrícula' : 'Ver en lista',
+                        onPressed: () =>
+                            context.read<LibraryCubit>().toggleLayout(),
+                        icon: Icon(
+                          isList
+                              ? Icons.grid_view_rounded
+                              : Icons.view_list_rounded,
+                          color: AppColors.onSurface,
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
             if (title != 'Deseos')
@@ -102,7 +126,7 @@ class _LibraryBody extends StatelessWidget {
     return BlocBuilder<LibraryCubit, LibraryState>(
       builder: (context, state) {
         return switch (state) {
-          LibraryLoaded() => _LibraryGrid(state: state),
+          LibraryLoaded() => _LibraryContent(state: state),
           LibraryError(:final message) => EmptyState(
             icon: Icons.wifi_off_rounded,
             title: 'No se pudo cargar',
@@ -110,15 +134,15 @@ class _LibraryBody extends StatelessWidget {
             actionLabel: 'Reintentar',
             onAction: () => context.read<LibraryCubit>().retry(),
           ),
-          _ => const _LibrarySkeleton(),
+          _ => _LibrarySkeleton(layout: state.layout),
         };
       },
     );
   }
 }
 
-class _LibraryGrid extends StatelessWidget {
-  const _LibraryGrid({required this.state});
+class _LibraryContent extends StatelessWidget {
+  const _LibraryContent({required this.state});
 
   final LibraryLoaded state;
 
@@ -135,6 +159,33 @@ class _LibraryGrid extends StatelessWidget {
       );
     }
 
+    final queue = [for (final item in games) item.game];
+    if (state.layout == LibraryLayout.list) {
+      return ListView.separated(
+        padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
+        itemCount: games.length,
+        separatorBuilder: (_, _) => const Divider(
+          height: 1,
+          color: AppColors.outline,
+          indent: 94,
+        ),
+        itemBuilder: (context, index) {
+          final item = games[index];
+          final heroTag = 'library-${item.game.id}';
+          return GameListRow(
+            game: item.game,
+            heroTag: heroTag,
+            onTap: () => openGameDetails(
+              context,
+              item.game,
+              heroTag: heroTag,
+              queue: queue,
+            ),
+          );
+        },
+      );
+    }
+
     return GameGrid(
       itemCount: games.length,
       itemBuilder: (context, index) {
@@ -147,6 +198,7 @@ class _LibraryGrid extends StatelessWidget {
             context,
             item.game,
             heroTag: heroTag,
+            queue: queue,
           ),
         );
       },
@@ -155,10 +207,26 @@ class _LibraryGrid extends StatelessWidget {
 }
 
 class _LibrarySkeleton extends StatelessWidget {
-  const _LibrarySkeleton();
+  const _LibrarySkeleton({required this.layout});
+
+  final LibraryLayout layout;
 
   @override
   Widget build(BuildContext context) {
+    if (layout == LibraryLayout.list) {
+      return ListView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: 8,
+        itemBuilder: (_, _) => const Padding(
+          padding: EdgeInsets.fromLTRB(16, 10, 16, 10),
+          child: SizedBox(
+            height: 86,
+            child: GameCardSkeleton(fill: true),
+          ),
+        ),
+      );
+    }
+
     return GameGrid(
       physics: const NeverScrollableScrollPhysics(),
       itemCount: 8,

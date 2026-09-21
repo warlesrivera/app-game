@@ -18,7 +18,9 @@ class TranslateGameDescription {
       return game;
     }
     final existing = game.descriptionEs?.trim();
-    if (existing != null && existing.isNotEmpty) {
+    if (existing != null &&
+        existing.isNotEmpty &&
+        !_looksIncomplete(existing, source)) {
       return game;
     }
 
@@ -31,4 +33,11 @@ class TranslateGameDescription {
     await _gameRepository.cacheGame(updated);
     return updated;
   }
+}
+
+bool _looksIncomplete(String translated, String source) {
+  if (translated.endsWith('…') || translated.endsWith('...')) {
+    return true;
+  }
+  return source.length > 1200 && translated.length < (source.length * 0.65);
 }

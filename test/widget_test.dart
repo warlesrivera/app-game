@@ -22,13 +22,13 @@ import 'package:gamevault/features/games/presentation/game_details/game_details_
 import 'package:gamevault/features/games/domain/usecases/get_catalog_rows.dart';
 import 'package:gamevault/features/games/domain/usecases/get_discover_games_usecase.dart';
 import 'package:gamevault/features/games/domain/usecases/get_game_details.dart';
-import 'package:gamevault/features/games/domain/usecases/get_game_videos.dart';
 import 'package:gamevault/features/games/domain/usecases/get_games_by_ids.dart';
 import 'package:gamevault/features/games/domain/usecases/search_games_usecase.dart';
 import 'package:gamevault/features/games/presentation/game_details/game_details_cubit.dart';
 import 'package:gamevault/features/library/domain/models/library_entry.dart';
 import 'package:gamevault/features/library/domain/models/library_status.dart';
 import 'package:gamevault/features/library/domain/repositories/library_repository.dart';
+import 'package:gamevault/features/library/domain/usecases/remove_game_from_library.dart';
 import 'package:gamevault/features/library/domain/usecases/set_game_status.dart';
 import 'package:gamevault/features/library/domain/usecases/watch_library.dart';
 import 'package:gamevault/features/library/presentation/cubit/library_cubit.dart';
@@ -126,6 +126,7 @@ class _FakeGameRepository implements GameRepository {
     String ordering = '-added',
     String? dates,
     int page = 1,
+    int pageSize = 40,
   }) async {
     if (catalogId.startsWith('discover')) {
       return discover;
@@ -173,6 +174,9 @@ class _FakeLibraryRepository implements LibraryRepository {
     required String gameId,
     required LibraryStatus status,
   }) async {}
+
+  @override
+  Future<void> removeGame(String gameId) async {}
 }
 
 class _FakePriceRepository implements PriceRepository {
@@ -206,17 +210,16 @@ void main() {
       ..registerLazySingleton(() => SearchGamesUseCase(getIt()))
       ..registerLazySingleton(() => GetGamesByIds(getIt()))
       ..registerLazySingleton(() => GetGameDetails(getIt()))
-      ..registerLazySingleton(() => GetGameVideos(getIt()))
       ..registerFactoryParam<GameDetailsCubit, Game, String>(
         (game, _) => GameDetailsCubit(
           preview: game,
           getGameDetails: getIt(),
-          getGameVideos: getIt(),
         ),
       )
       ..registerLazySingleton<LibraryRepository>(_FakeLibraryRepository.new)
       ..registerLazySingleton(() => WatchLibrary(getIt()))
       ..registerLazySingleton(() => SetGameStatus(getIt()))
+      ..registerLazySingleton(() => RemoveGameFromLibrary(getIt()))
       ..registerLazySingleton<PriceRepository>(_FakePriceRepository.new)
       ..registerLazySingleton(() => SavePriceAlert(getIt()))
       ..registerLazySingleton(() => GetCatalogRowsUseCase(getIt()))
@@ -227,6 +230,7 @@ void main() {
           watchAuthState: getIt(),
           watchLibrary: getIt(),
           setGameStatus: getIt(),
+          removeGameFromLibrary: getIt(),
           getGamesByIds: getIt(),
           savePriceAlert: getIt(),
         ),

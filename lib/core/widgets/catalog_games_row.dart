@@ -12,11 +12,13 @@ class CatalogGamesRow extends StatefulWidget {
     required this.title,
     required this.games,
     this.heroPrefix = 'discover',
+    this.onTitleTap,
   });
 
   final String title;
   final List<Game> games;
   final String heroPrefix;
+  final VoidCallback? onTitleTap;
 
   @override
   State<CatalogGamesRow> createState() => _CatalogGamesRowState();
@@ -51,14 +53,40 @@ class _CatalogGamesRowState extends State<CatalogGamesRow> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: Text(
-            widget.title,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: AppColors.accent,
-              letterSpacing: 2.2,
-            ),
-          ),
+          padding: const EdgeInsets.fromLTRB(16, 0, 8, 8),
+          child: widget.onTitleTap == null
+              ? Text(
+                  widget.title,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: AppColors.accent,
+                    letterSpacing: 2.2,
+                  ),
+                )
+              : InkWell(
+                  onTap: widget.onTitleTap,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            widget.title,
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(
+                                  color: AppColors.accent,
+                                  letterSpacing: 2.2,
+                                ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: AppColors.accent,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
         ),
         SizedBox(
           height: GameCard.height,
@@ -94,6 +122,7 @@ class _CatalogGamesRowState extends State<CatalogGamesRow> {
                         context,
                         game,
                         heroTag: heroTag,
+                        queue: widget.games,
                       ),
                     ),
                   );

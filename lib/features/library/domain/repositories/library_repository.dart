@@ -10,4 +10,6 @@ abstract interface class LibraryRepository {
     required String gameId,
     required LibraryStatus status,
   });
+
+  Future<void> removeGame(String gameId);
 }
