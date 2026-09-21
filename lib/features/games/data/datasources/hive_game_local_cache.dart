@@ -1,6 +1,7 @@
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../domain/models/game.dart';
+import '../../domain/models/game_guide.dart';
 import 'game_local_cache.dart';
 
 class HiveGameLocalCache implements GameLocalCache {
@@ -67,8 +68,15 @@ class HiveGameLocalCache implements GameLocalCache {
   }
 
   @override
-  Future<void> saveGame(Game game) {
-    return _box.put(_gameKey(game.id), {
+  Future<void> saveGame(Game game) async {
+    if (!game.isDetailed) {
+      final existing = await getGame(game.id);
+      if (existing != null && existing.isDetailed) {
+        return;
+      }
+    }
+
+    await _box.put(_gameKey(game.id), {
       _cachedAtKey: DateTime.now().millisecondsSinceEpoch,
       'game': game.toJson(),
     });
@@ -118,6 +126,57 @@ class HiveGameLocalCache implements GameLocalCache {
   }
 
   String _gameKey(String id) => 'game_$id';
+
+  String _catalogKey(String catalogId) => 'catalog_v3_$catalogId';
+
+  String _guideKey(String gameId) => 'guide_$gameId';
+
+  @override
+  Future<List<Game>?> getCatalog(String catalogId) {
+    return _read(_catalogKey(catalogId));
+  }
+
+  @override
+  Future<void> saveCatalog({
+    required String catalogId,
+    required List<Game> games,
+  }) async {
+    await _write(_catalogKey(catalogId), games);
+    await _indexGames(games);
+  }
+
+  @override
+  Future<GameGuide?> getGuide(String gameId) async {
+    final raw = _box.get(_guideKey(gameId));
+    if (raw is! Map) {
+      return null;
+    }
+    final cachedAtMillis = raw[_cachedAtKey] as int?;
+    if (cachedAtMillis == null) {
+      return null;
+    }
+    final cachedAt = DateTime.fromMillisecondsSinceEpoch(cachedAtMillis);
+    if (DateTime.now().difference(cachedAt) >= const Duration(days: 7)) {
+      await _box.delete(_guideKey(gameId));
+      return null;
+    }
+    final json = raw['guide'];
+    if (json is! Map) {
+      return null;
+    }
+    return GameGuide.fromJson(Map<String, dynamic>.from(json));
+  }
+
+  @override
+  Future<void> saveGuide({
+    required String gameId,
+    required GameGuide guide,
+  }) {
+    return _box.put(_guideKey(gameId), {
+      _cachedAtKey: DateTime.now().millisecondsSinceEpoch,
+      'guide': guide.toJson(),
+    });
+  }
 
   Future<void> _indexGames(List<Game> games) async {
     for (final game in games) {

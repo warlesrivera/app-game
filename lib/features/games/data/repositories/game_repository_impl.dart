@@ -1,4 +1,5 @@
 import '../../domain/models/game.dart';
+import '../../domain/models/game_video.dart';
 import '../../domain/repositories/game_repository.dart';
 import '../datasources/game_local_cache.dart';
 import '../datasources/rawg_remote_datasource.dart';
@@ -53,6 +54,33 @@ class GameRepositoryImpl implements GameRepository {
   }
 
   @override
+  Future<Game> getGameDetails(int id) async {
+    final cached = await localCache.getGame('$id');
+    if (cached != null && cached.isDetailed) {
+      return cached;
+    }
+
+    final remote = await remoteDataSource.getGameDetails(id);
+    final merged = cached == null
+        ? remote
+        : remote.copyWith(
+            coverUrl: cached.coverUrl ?? remote.coverUrl,
+            name: cached.name.isNotEmpty ? cached.name : remote.name,
+            screenshotUrls: remote.screenshotUrls.isNotEmpty
+                ? remote.screenshotUrls
+                : cached.screenshotUrls,
+            descriptionEs: cached.descriptionEs ?? remote.descriptionEs,
+          );
+    await localCache.saveGame(merged);
+    return merged;
+  }
+
+  @override
+  Future<List<GameVideo>> getGameVideos(int id) {
+    return remoteDataSource.getGameVideos(id);
+  }
+
+  @override
   Future<List<Game>> getGamesByIds(List<String> ids) async {
     final games = <Game>[];
     for (final id in ids) {
@@ -62,5 +90,37 @@ class GameRepositoryImpl implements GameRepository {
       }
     }
     return games;
+  }
+
+  @override
+  Future<List<Game>> getCatalog({
+    required String catalogId,
+    int? parentPlatforms,
+    String? platforms,
+    String ordering = '-added',
+    String? dates,
+    int page = 1,
+  }) async {
+    final cacheId = '$catalogId-p$page';
+    final cached = await localCache.getCatalog(cacheId);
+    if (cached != null) {
+      return cached;
+    }
+
+    final remote = await remoteDataSource.getCatalog(
+      catalogId: catalogId,
+      parentPlatforms: parentPlatforms,
+      platforms: platforms,
+      ordering: ordering,
+      dates: dates,
+      page: page,
+    );
+    await localCache.saveCatalog(catalogId: cacheId, games: remote);
+    return remote;
+  }
+
+  @override
+  Future<void> cacheGame(Game game) {
+    return localCache.saveGame(game);
   }
 }

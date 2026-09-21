@@ -16,11 +16,16 @@ import 'package:gamevault/features/auth/presentation/splash_page.dart';
 import 'package:gamevault/features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import 'package:gamevault/features/dashboard/presentation/dashboard_page.dart';
 import 'package:gamevault/features/games/domain/models/game.dart';
+import 'package:gamevault/features/games/domain/models/game_video.dart';
 import 'package:gamevault/features/games/domain/repositories/game_repository.dart';
 import 'package:gamevault/features/games/presentation/game_details/game_details_page.dart';
+import 'package:gamevault/features/games/domain/usecases/get_catalog_rows.dart';
 import 'package:gamevault/features/games/domain/usecases/get_discover_games_usecase.dart';
+import 'package:gamevault/features/games/domain/usecases/get_game_details.dart';
+import 'package:gamevault/features/games/domain/usecases/get_game_videos.dart';
 import 'package:gamevault/features/games/domain/usecases/get_games_by_ids.dart';
 import 'package:gamevault/features/games/domain/usecases/search_games_usecase.dart';
+import 'package:gamevault/features/games/presentation/game_details/game_details_cubit.dart';
 import 'package:gamevault/features/library/domain/models/library_entry.dart';
 import 'package:gamevault/features/library/domain/models/library_status.dart';
 import 'package:gamevault/features/library/domain/repositories/library_repository.dart';
@@ -71,6 +76,7 @@ class _FakeGameRepository implements GameRepository {
       description: 'A dark fantasy adventure.',
       rating: 4.6,
       platforms: ['PlayStation 5', 'PC'],
+      platformSlugs: ['playstation5', 'pc'],
       genres: ['RPG', 'Action'],
     ),
   ];
@@ -92,6 +98,15 @@ class _FakeGameRepository implements GameRepository {
   }
 
   @override
+  Future<Game> getGameDetails(int id) async {
+    return (await getGameById('$id')) ??
+        discover.first.copyWith(id: '$id', isDetailed: true);
+  }
+
+  @override
+  Future<List<GameVideo>> getGameVideos(int id) async => const [];
+
+  @override
   Future<List<Game>> getGamesByIds(List<String> ids) async {
     final games = <Game>[];
     for (final id in ids) {
@@ -102,6 +117,24 @@ class _FakeGameRepository implements GameRepository {
     }
     return games;
   }
+
+  @override
+  Future<List<Game>> getCatalog({
+    required String catalogId,
+    int? parentPlatforms,
+    String? platforms,
+    String ordering = '-added',
+    String? dates,
+    int page = 1,
+  }) async {
+    if (catalogId.startsWith('discover')) {
+      return discover;
+    }
+    return const [];
+  }
+
+  @override
+  Future<void> cacheGame(Game game) async {}
 }
 
 class _IdleAuthRepository implements AuthRepository {
@@ -172,12 +205,22 @@ void main() {
       ..registerLazySingleton(() => GetDiscoverGamesUseCase(getIt()))
       ..registerLazySingleton(() => SearchGamesUseCase(getIt()))
       ..registerLazySingleton(() => GetGamesByIds(getIt()))
+      ..registerLazySingleton(() => GetGameDetails(getIt()))
+      ..registerLazySingleton(() => GetGameVideos(getIt()))
+      ..registerFactoryParam<GameDetailsCubit, Game, String>(
+        (game, _) => GameDetailsCubit(
+          preview: game,
+          getGameDetails: getIt(),
+          getGameVideos: getIt(),
+        ),
+      )
       ..registerLazySingleton<LibraryRepository>(_FakeLibraryRepository.new)
       ..registerLazySingleton(() => WatchLibrary(getIt()))
       ..registerLazySingleton(() => SetGameStatus(getIt()))
       ..registerLazySingleton<PriceRepository>(_FakePriceRepository.new)
       ..registerLazySingleton(() => SavePriceAlert(getIt()))
-      ..registerFactory(() => DashboardCubit(getDiscoverGames: getIt()))
+      ..registerLazySingleton(() => GetCatalogRowsUseCase(getIt()))
+      ..registerFactory(() => DashboardCubit(getCatalogRows: getIt()))
       ..registerFactory(() => SearchCubit(searchGames: getIt()))
       ..registerFactory(
         () => LibraryCubit(
@@ -326,7 +369,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    await tester.tap(find.byType(GameCard));
+    await tester.tap(find.byType(GameCard).first);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 550));
 

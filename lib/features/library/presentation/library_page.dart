@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/game_card.dart';
+import '../../../core/widgets/game_grid.dart';
 import '../../games/presentation/game_details/game_details_page.dart';
 import '../domain/models/library_status.dart';
 import 'cubit/library_cubit.dart';
@@ -38,7 +39,7 @@ class LibraryPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
               child: Text(
                 title.toUpperCase(),
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -54,7 +55,7 @@ class LibraryPage extends StatelessWidget {
                   builder: (context, state) {
                     return ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       itemCount: LibraryFilter.values.length,
                       separatorBuilder: (_, _) => const SizedBox(width: 8),
                       itemBuilder: (context, index) {
@@ -84,7 +85,7 @@ class LibraryPage extends StatelessWidget {
                   },
                 ),
               ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             const Expanded(child: _LibraryBody()),
           ],
         ),
@@ -134,27 +135,18 @@ class _LibraryGrid extends StatelessWidget {
       );
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: GameCard.width / GameCard.height,
-      ),
+    return GameGrid(
       itemCount: games.length,
       itemBuilder: (context, index) {
         final item = games[index];
         final heroTag = 'library-${item.game.id}';
-        return Center(
-          child: GameCard(
-            game: item.game,
+        return GameGridCard(
+          game: item.game,
+          heroTag: heroTag,
+          onTap: () => openGameDetails(
+            context,
+            item.game,
             heroTag: heroTag,
-            onTap: () => openGameDetails(
-              context,
-              item.game,
-              heroTag: heroTag,
-            ),
           ),
         );
       },
@@ -167,17 +159,10 @@ class _LibrarySkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+    return GameGrid(
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: GameCard.width / GameCard.height,
-      ),
-      itemCount: 6,
-      itemBuilder: (_, _) => const Center(child: GameCardSkeleton()),
+      itemCount: 8,
+      itemBuilder: (_, _) => const GameCardSkeleton(fill: true),
     );
   }
 }

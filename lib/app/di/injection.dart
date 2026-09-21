@@ -27,11 +27,21 @@ import '../../features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import '../../features/games/data/datasources/game_local_cache.dart';
 import '../../features/games/data/datasources/hive_game_local_cache.dart';
 import '../../features/games/data/datasources/rawg_remote_datasource.dart';
+import '../../features/games/data/datasources/wikipedia_guide_remote_datasource.dart';
+import '../../features/games/data/repositories/game_guide_repository_impl.dart';
 import '../../features/games/data/repositories/game_repository_impl.dart';
+import '../../features/games/domain/models/game.dart';
+import '../../features/games/domain/repositories/game_guide_repository.dart';
 import '../../features/games/domain/repositories/game_repository.dart';
+import '../../features/games/domain/usecases/get_catalog_rows.dart';
 import '../../features/games/domain/usecases/get_discover_games_usecase.dart';
+import '../../features/games/domain/usecases/get_game_details.dart';
+import '../../features/games/domain/usecases/get_game_guide.dart';
+import '../../features/games/domain/usecases/get_game_videos.dart';
 import '../../features/games/domain/usecases/get_games_by_ids.dart';
 import '../../features/games/domain/usecases/search_games_usecase.dart';
+import '../../features/games/domain/usecases/translate_game_description.dart';
+import '../../features/games/presentation/game_details/game_details_cubit.dart';
 import '../../features/library/data/datasources/library_remote_datasource.dart';
 import '../../features/library/data/repositories/library_repository_impl.dart';
 import '../../features/library/domain/repositories/library_repository.dart';
@@ -74,7 +84,34 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton(() => GetDiscoverGamesUseCase(getIt()))
     ..registerLazySingleton(() => SearchGamesUseCase(getIt()))
     ..registerLazySingleton(() => GetGamesByIds(getIt()))
-    ..registerFactory(() => DashboardCubit(getDiscoverGames: getIt()))
+    ..registerLazySingleton(() => GetGameDetails(getIt()))
+    ..registerLazySingleton(() => GetGameVideos(getIt()))
+    ..registerLazySingleton(() => GetCatalogRowsUseCase(getIt()))
+    ..registerLazySingleton(WikipediaGuideRemoteDataSource.new)
+    ..registerLazySingleton<GameGuideRepository>(
+      () => GameGuideRepositoryImpl(
+        wikipedia: getIt(),
+        localCache: getIt(),
+        gemini: getIt(),
+      ),
+    )
+    ..registerLazySingleton(() => GetGameGuide(getIt()))
+    ..registerLazySingleton(
+      () => TranslateGameDescription(
+        gemini: getIt(),
+        gameRepository: getIt(),
+      ),
+    )
+    ..registerFactoryParam<GameDetailsCubit, Game, String>(
+      (game, _) => GameDetailsCubit(
+        preview: game,
+        getGameDetails: getIt(),
+        getGameVideos: getIt(),
+        translateDescription: getIt(),
+        getGameGuide: getIt(),
+      ),
+    )
+    ..registerFactory(() => DashboardCubit(getCatalogRows: getIt()))
     ..registerFactory(() => SearchCubit(searchGames: getIt()))
     ..registerFactory(() => ConnectivityBloc())
     ..registerLazySingleton<AuthRemoteDataSource>(
@@ -131,10 +168,9 @@ Future<void> configureDependencies() async {
     )
     ..registerLazySingleton(() => SendAiMessage(getIt()))
     ..registerLazySingleton(() => WatchAiMessages(getIt()))
-    ..registerFactoryParam<AiChatCubit, String, String>(
-      (gameId, gameName) => AiChatCubit(
-        gameId: gameId,
-        gameName: gameName,
+    ..registerFactoryParam<AiChatCubit, Game, String>(
+      (game, _) => AiChatCubit(
+        game: game,
         sendAiMessage: getIt(),
         watchAiMessages: getIt(),
       ),

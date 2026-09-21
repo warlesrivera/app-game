@@ -2,30 +2,42 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../games/domain/models/game.dart';
+import '../../domain/ai_error.dart';
 import '../../domain/models/chat_message.dart';
+import '../../domain/models/game_ai_context.dart';
 import '../../domain/usecases/send_ai_message.dart';
 import '../../domain/usecases/watch_ai_messages.dart';
 import 'ai_chat_state.dart';
 
 class AiChatCubit extends Cubit<AiChatState> {
   AiChatCubit({
-    required this.gameId,
-    required this.gameName,
+    required Game game,
     required SendAiMessage sendAiMessage,
     required WatchAiMessages watchAiMessages,
-  }) : _sendAiMessage = sendAiMessage,
+  }) : gameId = game.id,
+       gameName = game.name,
+       _gameContext = GameAiContext.fromGame(game),
+       _sendAiMessage = sendAiMessage,
        _watchAiMessages = watchAiMessages,
        super(const AiChatInitial()) {
     _subscription = _watchAiMessages(gameId).listen(
       (messages) {
-        emit(AiChatReady(messages: messages, sending: _sending));
+        emit(
+          AiChatReady(
+            messages: messages,
+            sending: _sending,
+            error: _error,
+          ),
+        );
       },
       onError: (_) {
+        _error = 'No se pudo cargar el chat.';
         emit(
           AiChatReady(
             messages: const [],
             sending: false,
-            error: 'No se pudo cargar el chat.',
+            error: _error,
           ),
         );
       },
@@ -34,10 +46,12 @@ class AiChatCubit extends Cubit<AiChatState> {
 
   final String gameId;
   final String gameName;
+  final GameAiContext _gameContext;
   final SendAiMessage _sendAiMessage;
   final WatchAiMessages _watchAiMessages;
   StreamSubscription<List<ChatMessage>>? _subscription;
   var _sending = false;
+  String? _error;
 
   bool get isAvailable => _sendAiMessage.isAvailable;
 
@@ -48,9 +62,11 @@ class AiChatCubit extends Cubit<AiChatState> {
     }
 
     _sending = true;
+    _error = null;
     final current = state;
+    final prior = current is AiChatReady ? current.messages : const <ChatMessage>[];
     final optimistic = [
-      if (current is AiChatReady) ...current.messages,
+      ...prior,
       ChatMessage(
         id: 'local-${DateTime.now().millisecondsSinceEpoch}',
         role: ChatRole.user,
@@ -70,14 +86,18 @@ class AiChatCubit extends Cubit<AiChatState> {
         gameId: gameId,
         gameName: gameName,
         message: text,
+        gameContext: _gameContext,
+        history: prior,
       );
+      _error = null;
     } catch (error) {
       _sending = false;
+      _error = friendlyAiError(error);
       emit(
         AiChatReady(
           messages: optimistic,
           sending: false,
-          error: error.toString(),
+          error: _error,
         ),
       );
       return;

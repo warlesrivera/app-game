@@ -1,23 +1,24 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/errors/failures.dart';
-import '../../../games/domain/usecases/get_discover_games_usecase.dart';
+import '../../../games/domain/usecases/get_catalog_rows.dart';
 import 'dashboard_state.dart';
 
 class DashboardCubit extends Cubit<DashboardState> {
-  DashboardCubit({required this._getDiscoverGames})
-    : super(const DashboardState.initial());
+  DashboardCubit({required GetCatalogRowsUseCase getCatalogRows})
+    : _getCatalogRows = getCatalogRows,
+      super(const DashboardState.initial());
 
-  final GetDiscoverGamesUseCase _getDiscoverGames;
+  final GetCatalogRowsUseCase _getCatalogRows;
 
   Future<void> loadDiscoverGames() async {
     emit(const DashboardState.loading());
     try {
-      final games = await _getDiscoverGames();
+      final rows = await _getCatalogRows();
       if (isClosed) {
         return;
       }
-      emit(DashboardState.loaded(games));
+      emit(DashboardState.loaded(rows));
     } catch (error) {
       if (isClosed) {
         return;

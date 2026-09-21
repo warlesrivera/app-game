@@ -1,4 +1,6 @@
+import '../../domain/ai_error.dart';
 import '../../domain/models/chat_message.dart';
+import '../../domain/models/game_ai_context.dart';
 import '../../domain/repositories/game_ai_repository.dart';
 import '../datasources/ai_chat_remote_datasource.dart';
 import '../providers/gemini_ai_provider.dart';
@@ -26,6 +28,8 @@ class GameAIRepositoryImpl implements GameAIRepository {
     required String gameId,
     required String gameName,
     required String message,
+    GameAiContext? gameContext,
+    List<ChatMessage> history = const [],
   }) async {
     await _remote.ensureChat(gameId: gameId, gameName: gameName);
     await _remote.addMessage(
@@ -34,16 +38,24 @@ class GameAIRepositoryImpl implements GameAIRepository {
       text: message,
     );
 
-    final reply = await _provider.generate(
-      gameName: gameName,
-      message: message,
-    );
-
-    await _remote.addMessage(
-      gameId: gameId,
-      role: ChatRole.assistant,
-      text: reply,
-    );
-    return reply;
+    try {
+      final reply = await _provider.generate(
+        gameName: gameName,
+        message: message,
+        gameContext: gameContext,
+        history: history,
+      );
+      await _remote.addMessage(
+        gameId: gameId,
+        role: ChatRole.assistant,
+        text: reply,
+      );
+      return reply;
+    } catch (error) {
+      if (error is StateError) {
+        rethrow;
+      }
+      throw StateError(friendlyAiError(error));
+    }
   }
 }

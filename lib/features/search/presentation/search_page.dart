@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/game_card.dart';
+import '../../../core/widgets/game_grid.dart';
 import '../../games/domain/models/game.dart';
 import '../../games/presentation/game_details/game_details_page.dart';
 import 'cubit/search_cubit.dart';
@@ -119,38 +120,19 @@ class _SearchResults extends StatelessWidget {
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth >= 900
-            ? 4
-            : constraints.maxWidth >= 600
-            ? 3
-            : 2;
-
-        return GridView.builder(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: GameCard.width / GameCard.height,
+    return GameGrid(
+      itemCount: games.length,
+      itemBuilder: (context, index) {
+        final game = games[index];
+        final heroTag = 'search-${game.id}';
+        return GameGridCard(
+          game: game,
+          heroTag: heroTag,
+          onTap: () => openGameDetails(
+            context,
+            game,
+            heroTag: heroTag,
           ),
-          itemCount: games.length,
-          itemBuilder: (context, index) {
-            final game = games[index];
-            final heroTag = 'search-${game.id}';
-            return Center(
-              child: GameCard(
-                game: game,
-                heroTag: heroTag,
-                onTap: () => openGameDetails(
-                  context,
-                  game,
-                  heroTag: heroTag,
-                ),
-              ),
-            );
-          },
         );
       },
     );
@@ -162,17 +144,10 @@ class _SearchSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+    return GameGrid(
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: GameCard.width / GameCard.height,
-      ),
-      itemCount: 6,
-      itemBuilder: (_, _) => const Center(child: GameCardSkeleton()),
+      itemCount: 8,
+      itemBuilder: (_, _) => const GameCardSkeleton(fill: true),
     );
   }
 }

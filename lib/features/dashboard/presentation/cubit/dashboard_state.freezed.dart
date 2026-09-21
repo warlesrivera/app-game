@@ -128,12 +128,12 @@ return error(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<Game> games)?  loaded,TResult Function( String message)?  error,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<CatalogRow> rows)?  loaded,TResult Function( String message)?  error,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case DashboardInitial() when initial != null:
 return initial();case DashboardLoading() when loading != null:
 return loading();case DashboardLoaded() when loaded != null:
-return loaded(_that.games);case DashboardError() when error != null:
+return loaded(_that.rows);case DashboardError() when error != null:
 return error(_that.message);case _:
   return orElse();
 
@@ -152,12 +152,12 @@ return error(_that.message);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<Game> games)  loaded,required TResult Function( String message)  error,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<CatalogRow> rows)  loaded,required TResult Function( String message)  error,}) {final _that = this;
 switch (_that) {
 case DashboardInitial():
 return initial();case DashboardLoading():
 return loading();case DashboardLoaded():
-return loaded(_that.games);case DashboardError():
+return loaded(_that.rows);case DashboardError():
 return error(_that.message);case _:
   throw StateError('Unexpected subclass');
 
@@ -175,12 +175,12 @@ return error(_that.message);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<Game> games)?  loaded,TResult? Function( String message)?  error,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<CatalogRow> rows)?  loaded,TResult? Function( String message)?  error,}) {final _that = this;
 switch (_that) {
 case DashboardInitial() when initial != null:
 return initial();case DashboardLoading() when loading != null:
 return loading();case DashboardLoaded() when loaded != null:
-return loaded(_that.games);case DashboardError() when error != null:
+return loaded(_that.rows);case DashboardError() when error != null:
 return error(_that.message);case _:
   return null;
 
@@ -257,14 +257,14 @@ String toString() {
 
 
 class DashboardLoaded implements DashboardState {
-  const DashboardLoaded(final  List<Game> games): _games = games;
+  const DashboardLoaded(final  List<CatalogRow> rows): _rows = rows;
   
 
- final  List<Game> _games;
- List<Game> get games {
-  if (_games is EqualUnmodifiableListView) return _games;
+ final  List<CatalogRow> _rows;
+ List<CatalogRow> get rows {
+  if (_rows is EqualUnmodifiableListView) return _rows;
   // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_games);
+  return EqualUnmodifiableListView(_rows);
 }
 
 
@@ -278,16 +278,16 @@ $DashboardLoadedCopyWith<DashboardLoaded> get copyWith => _$DashboardLoadedCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DashboardLoaded&&const DeepCollectionEquality().equals(other._games, _games));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DashboardLoaded&&const DeepCollectionEquality().equals(other._rows, _rows));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_games));
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_rows));
 
 @override
 String toString() {
-  return 'DashboardState.loaded(games: $games)';
+  return 'DashboardState.loaded(rows: $rows)';
 }
 
 
@@ -298,7 +298,7 @@ abstract mixin class $DashboardLoadedCopyWith<$Res> implements $DashboardStateCo
   factory $DashboardLoadedCopyWith(DashboardLoaded value, $Res Function(DashboardLoaded) _then) = _$DashboardLoadedCopyWithImpl;
 @useResult
 $Res call({
- List<Game> games
+ List<CatalogRow> rows
 });
 
 
@@ -315,10 +315,10 @@ class _$DashboardLoadedCopyWithImpl<$Res>
 
 /// Create a copy of DashboardState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? games = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? rows = null,}) {
   return _then(DashboardLoaded(
-null == games ? _self._games : games // ignore: cast_nullable_to_non_nullable
-as List<Game>,
+null == rows ? _self._rows : rows // ignore: cast_nullable_to_non_nullable
+as List<CatalogRow>,
   ));
 }
 

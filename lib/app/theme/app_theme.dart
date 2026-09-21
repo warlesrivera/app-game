@@ -44,6 +44,12 @@ abstract final class AppTheme {
         systemOverlayStyle: systemUi,
       ),
       dividerColor: AppColors.outline,
+      tabBarTheme: const TabBarThemeData(
+        indicatorColor: AppColors.accent,
+        labelColor: AppColors.accent,
+        unselectedLabelColor: AppColors.onSurfaceMuted,
+        dividerColor: AppColors.outline,
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceHigh,

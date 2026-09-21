@@ -6,7 +6,8 @@ class ApiClient {
     required String baseUrl,
     required String apiKey,
     Dio? dio,
-  }) : _dio =
+  }) : apiKey = apiKey,
+       _dio =
            dio ??
            Dio(
              BaseOptions(
@@ -23,6 +24,7 @@ class ApiClient {
   }
 
   final Dio _dio;
+  final String apiKey;
 
   Dio get dio => _dio;
 }

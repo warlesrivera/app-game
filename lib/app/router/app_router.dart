@@ -12,6 +12,7 @@ import '../../features/ai_chat/presentation/cubit/ai_chat_cubit.dart';
 import '../../features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import '../../features/dashboard/presentation/dashboard_page.dart';
 import '../../features/games/domain/models/game.dart';
+import '../../features/games/presentation/game_details/game_details_cubit.dart';
 import '../../features/games/presentation/game_details/game_details_page.dart';
 import '../../features/library/presentation/library_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
@@ -108,11 +109,20 @@ final class AppRouter {
           name: 'gameDetails',
           pageBuilder: (context, state) {
             final id = state.pathParameters['id'] ?? '';
+            final args = GameDetailsArgs.tryParse(state.extra);
+            final preview = args?.game ?? Game(id: id, name: 'Juego');
+            final heroTag = args?.heroTag ?? 'game-cover-$id';
             return CustomTransitionPage<void>(
               key: state.pageKey,
               transitionDuration: const Duration(milliseconds: 500),
               reverseTransitionDuration: const Duration(milliseconds: 420),
-              child: GameDetailsPage.fromRoute(id: id, extra: state.extra),
+              child: BlocProvider(
+                create: (_) => getIt<GameDetailsCubit>(
+                  param1: preview,
+                  param2: heroTag,
+                )..load(),
+                child: GameDetailsPage(heroTag: heroTag),
+              ),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return FadeTransition(
                   opacity: CurvedAnimation(
@@ -134,7 +144,7 @@ final class AppRouter {
                 final game = extra is Game ? extra : Game(id: id, name: 'Juego');
                 return BlocProvider(
                   create: (_) => getIt<AiChatCubit>(
-                    param1: game.id,
+                    param1: game,
                     param2: game.name,
                   ),
                   child: AiChatPage(gameName: game.name),
