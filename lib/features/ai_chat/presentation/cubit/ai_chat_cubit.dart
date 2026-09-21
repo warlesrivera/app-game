@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../games/domain/models/game.dart';
@@ -91,6 +92,7 @@ class AiChatCubit extends Cubit<AiChatState> {
       );
       _error = null;
     } catch (error) {
+      debugPrint('AI chat send failed: $error');
       _sending = false;
       _error = friendlyAiError(error);
       emit(

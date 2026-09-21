@@ -56,19 +56,24 @@ class GameRepositoryImpl implements GameRepository {
   @override
   Future<Game> getGameDetails(int id) async {
     final cached = await localCache.getGame('$id');
-    if (cached != null && cached.isDetailed) {
-      return cached;
+    final remote = await remoteDataSource.getGameDetails(id);
+    final mergedShots = <String>[];
+    final seen = <String>{};
+    for (final url in [
+      ...remote.screenshotUrls,
+      ...?cached?.screenshotUrls,
+    ]) {
+      if (url.isNotEmpty && seen.add(url)) {
+        mergedShots.add(url);
+      }
     }
 
-    final remote = await remoteDataSource.getGameDetails(id);
     final merged = cached == null
-        ? remote
+        ? remote.copyWith(screenshotUrls: mergedShots)
         : remote.copyWith(
             coverUrl: cached.coverUrl ?? remote.coverUrl,
             name: cached.name.isNotEmpty ? cached.name : remote.name,
-            screenshotUrls: remote.screenshotUrls.isNotEmpty
-                ? remote.screenshotUrls
-                : cached.screenshotUrls,
+            screenshotUrls: mergedShots,
             descriptionEs: cached.descriptionEs ?? remote.descriptionEs,
           );
     await localCache.saveGame(merged);

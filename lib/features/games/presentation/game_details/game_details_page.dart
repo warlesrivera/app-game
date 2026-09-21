@@ -222,13 +222,19 @@ class _DetailsPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-                      _PlatformRow(
-                        slugs: game.platformSlugs,
-                        names: game.platforms,
-                      ),
+        _PlatformRow(
+          slugs: game.platformSlugs,
+          names: game.platforms,
+        ),
         const SizedBox(height: 20),
         _MetaRow(game: game),
         const SizedBox(height: 28),
+        const _SectionTitle('TRÁILERS'),
+        const SizedBox(height: 14),
+        _VideosRow(state: state),
+        const SizedBox(height: 28),
+        _ScreenshotGallery(urls: game.screenshotUrls),
+        if (game.screenshotUrls.isNotEmpty) const SizedBox(height: 28),
         const _SectionTitle('SINOPSIS'),
         const SizedBox(height: 12),
         if (state.loadingDescription ||
@@ -242,7 +248,7 @@ class _DetailsPanel extends StatelessWidget {
               height: 1.55,
             ),
           )
-        else
+          else
           Text(
             'No hay descripción disponible.',
             style: textTheme.bodyLarge?.copyWith(
@@ -251,11 +257,6 @@ class _DetailsPanel extends StatelessWidget {
             ),
           ),
         const SizedBox(height: 28),
-        const _SectionTitle('TRÁILERS'),
-        const SizedBox(height: 14),
-        _VideosRow(state: state),
-        const SizedBox(height: 28),
-        _ScreenshotGallery(urls: game.screenshotUrls),
         _NamedListSection(
           title: 'DESARROLLADORES',
           values: game.developers,
@@ -329,11 +330,9 @@ class _VideosRow extends StatelessWidget {
     }
 
     if (state.videos.isEmpty) {
-      return Text(
-        'RAWG no incluye un tráiler para este juego.',
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-          color: AppColors.onSurfaceMuted,
-        ),
+      return _YoutubeTrailerFallback(
+        gameName: state.game.name,
+        coverUrl: state.game.coverUrl,
       );
     }
 
@@ -413,11 +412,69 @@ class _VideoThumbnail extends StatelessWidget {
   }
 
   Future<void> _open(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri == null) {
-      return;
-    }
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    await _openExternalUrl(url);
+  }
+}
+
+class _YoutubeTrailerFallback extends StatelessWidget {
+  const _YoutubeTrailerFallback({
+    required this.gameName,
+    required this.coverUrl,
+  });
+
+  final String gameName;
+  final String? coverUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => _openExternalUrl(_youtubeSearchUrl(gameName)),
+          child: SizedBox(
+            height: 148,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (coverUrl != null && coverUrl!.isNotEmpty)
+                    CachedNetworkImage(
+                      imageUrl: coverUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (_, _) => const ColoredBox(
+                        color: AppColors.surfaceHigh,
+                      ),
+                      errorWidget: (_, _, _) => const ColoredBox(
+                        color: AppColors.surfaceHigh,
+                      ),
+                    )
+                  else
+                    const ColoredBox(color: AppColors.surfaceHigh),
+                  const ColoredBox(color: Color(0x99000000)),
+                  const Center(
+                    child: Icon(
+                      Icons.play_circle_fill_rounded,
+                      size: 64,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'RAWG no incluye un archivo de tráiler para este juego. '
+          'Ábrelo en YouTube.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppColors.onSurfaceMuted,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -503,13 +560,7 @@ class _GuideLinkButton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: OutlinedButton.icon(
-        onPressed: () async {
-          final uri = Uri.tryParse(url);
-          if (uri == null) {
-            return;
-          }
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        },
+        onPressed: () => _openExternalUrl(url),
         icon: const Icon(Icons.open_in_new_rounded),
         label: Text(label),
       ),
@@ -520,6 +571,23 @@ class _GuideLinkButton extends StatelessWidget {
 
 bool _hasText(String? value) {
   return value != null && value.trim().isNotEmpty;
+}
+
+String _youtubeSearchUrl(String gameName) {
+  final query = Uri.encodeQueryComponent('$gameName official trailer');
+  return 'https://www.youtube.com/results?search_query=$query';
+}
+
+Future<void> _openExternalUrl(String url) async {
+  final uri = Uri.tryParse(url);
+  if (uri == null) {
+    return;
+  }
+  await launchUrl(
+    uri,
+    mode: LaunchMode.externalApplication,
+    webOnlyWindowName: '_blank',
+  );
 }
 
 class _SectionTitle extends StatelessWidget {
@@ -579,13 +647,7 @@ class _WebsiteButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
-      onPressed: () async {
-        final uri = Uri.tryParse(url);
-        if (uri == null) {
-          return;
-        }
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      },
+      onPressed: () => _openExternalUrl(url),
       icon: const Icon(Icons.open_in_new_rounded),
       label: Text(url, overflow: TextOverflow.ellipsis),
     );

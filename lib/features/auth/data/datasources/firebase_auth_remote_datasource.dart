@@ -10,11 +10,14 @@ class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
   FirebaseAuthRemoteDataSource({
     firebase_auth.FirebaseAuth? auth,
     GoogleSignIn? googleSignIn,
+    String? serverClientId,
   }) : _authOverride = auth,
-       _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
+       _googleSignIn = googleSignIn ?? GoogleSignIn.instance,
+       _serverClientId = serverClientId;
 
   final firebase_auth.FirebaseAuth? _authOverride;
   final GoogleSignIn _googleSignIn;
+  final String? _serverClientId;
   Future<void>? _googleInit;
 
   firebase_auth.FirebaseAuth get _auth {
@@ -124,7 +127,12 @@ class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
   }
 
   Future<void> _ensureGoogleInitialized() {
-    return _googleInit ??= _googleSignIn.initialize();
+    final serverClientId = _serverClientId?.trim();
+    return _googleInit ??= _googleSignIn.initialize(
+      serverClientId: (serverClientId == null || serverClientId.isEmpty)
+          ? '864867283892-2sqmte5euq7hicgvut0gcio2djmj7ov2.apps.googleusercontent.com'
+          : serverClientId,
+    );
   }
 
   firebase_auth.User _requireUser(firebase_auth.User? user) {

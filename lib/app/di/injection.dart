@@ -115,7 +115,9 @@ Future<void> configureDependencies() async {
     ..registerFactory(() => SearchCubit(searchGames: getIt()))
     ..registerFactory(() => ConnectivityBloc())
     ..registerLazySingleton<AuthRemoteDataSource>(
-      FirebaseAuthRemoteDataSource.new,
+      () => FirebaseAuthRemoteDataSource(
+        serverClientId: dotenv.env['GOOGLE_SERVER_CLIENT_ID'],
+      ),
     )
     ..registerLazySingleton<UserRemoteDataSource>(
       FirestoreUserRemoteDataSource.new,

@@ -71,7 +71,17 @@ class GameDetailsCubit extends Cubit<GameDetailsState> {
       if (isClosed) {
         return;
       }
-      emit(state.copyWith(game: game, loadingDescription: false));
+      emit(
+        state.copyWith(
+          game: game.copyWith(
+            screenshotUrls: _mergeUrls(
+              game.screenshotUrls,
+              state.game.screenshotUrls,
+            ),
+          ),
+          loadingDescription: false,
+        ),
+      );
       await _translateIfNeeded(game);
     } catch (error) {
       if (isClosed) {
@@ -160,4 +170,15 @@ class GameDetailsCubit extends Cubit<GameDetailsState> {
 
 bool _hasText(String? value) {
   return value != null && value.trim().isNotEmpty;
+}
+
+List<String> _mergeUrls(List<String> primary, List<String> extra) {
+  final merged = <String>[];
+  final seen = <String>{};
+  for (final url in [...primary, ...extra]) {
+    if (url.isNotEmpty && seen.add(url)) {
+      merged.add(url);
+    }
+  }
+  return merged;
 }

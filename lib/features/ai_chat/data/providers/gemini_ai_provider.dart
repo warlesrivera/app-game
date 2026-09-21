@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 import '../../domain/ai_error.dart';
@@ -10,9 +11,9 @@ class GeminiAiProvider {
   final String _apiKey;
 
   static const _models = [
-    'gemini-3.6-flash',
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
+    'gemini-flash-lite-latest',
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite',
   ];
 
   bool get isAvailable => _apiKey.isNotEmpty;
@@ -39,7 +40,8 @@ class GeminiAiProvider {
         );
       } catch (error) {
         lastError = error;
-        if (!_isRetryable(error)) {
+        debugPrint('Gemini $modelName: $error');
+        if (!_shouldTryNextModel(error)) {
           throw StateError(friendlyAiError(error));
         }
       }
@@ -120,7 +122,7 @@ class GeminiAiProvider {
     try {
       return await action();
     } catch (error) {
-      if (!_isRetryable(error)) {
+      if (!_isTransient(error)) {
         rethrow;
       }
       await Future<void>.delayed(const Duration(milliseconds: 700));
@@ -134,22 +136,12 @@ class GeminiAiProvider {
     }
 
     final clipped = text.length > 4500 ? text.substring(0, 4500) : text;
-    try {
-      final model = GenerativeModel(
-        model: _models.first,
-        apiKey: _apiKey,
-        systemInstruction: Content.system(
+    return _generatePlain(
+      system:
           'Traduce al español natural (neutro latinoamericano). '
           'Devuelve solo la traducción, sin comillas, títulos ni notas.',
-        ),
-      );
-      final response = await _withRetry(
-        () => model.generateContent([Content.text(clipped)]),
-      );
-      return response.text?.trim();
-    } catch (_) {
-      return null;
-    }
+      prompt: clipped,
+    );
   }
 
   Future<String?> generateStarterGuide(String gameName) async {
@@ -157,31 +149,61 @@ class GeminiAiProvider {
       return null;
     }
 
-    try {
-      final model = GenerativeModel(
-        model: _models.first,
-        apiKey: _apiKey,
-        systemInstruction: Content.system(
+    return _generatePlain(
+      system:
           'Eres un guía de videojuegos. Escribe en español, breve y sin spoilers graves. '
           'Incluye cómo empezar, consejos útiles y sistemas principales. Máximo 220 palabras.',
-        ),
-      );
-      final response = await _withRetry(
-        () => model.generateContent([
-          Content.text('Guía de inicio para "$gameName".'),
-        ]),
-      );
-      return response.text?.trim();
-    } catch (_) {
-      return null;
-    }
+      prompt: 'Guía de inicio para "$gameName".',
+    );
   }
 
-  static bool _isRetryable(Object error) {
+  Future<String?> _generatePlain({
+    required String system,
+    required String prompt,
+  }) async {
+    for (final modelName in _models) {
+      try {
+        final model = GenerativeModel(
+          model: modelName,
+          apiKey: _apiKey,
+          systemInstruction: Content.system(system),
+        );
+        final response = await _withRetry(
+          () => model.generateContent([Content.text(prompt)]),
+        );
+        final text = response.text?.trim();
+        if (text != null && text.isNotEmpty) {
+          return text;
+        }
+      } catch (error) {
+        debugPrint('Gemini $modelName: $error');
+        if (!_shouldTryNextModel(error)) {
+          return null;
+        }
+      }
+    }
+    return null;
+  }
+
+  static bool _isTransient(Object error) {
     final text = error.toString().toLowerCase();
+    if (text.contains('no longer available') || text.contains('not found')) {
+      return false;
+    }
     return text.contains('503') ||
         text.contains('unavailable') ||
-        text.contains('high demand') ||
-        text.contains('429');
+        text.contains('high demand');
+  }
+
+  static bool _shouldTryNextModel(Object error) {
+    final text = error.toString().toLowerCase();
+    return _isTransient(error) ||
+        text.contains('404') ||
+        text.contains('not found') ||
+        text.contains('no longer available') ||
+        text.contains('not supported') ||
+        text.contains('429') ||
+        text.contains('resource exhausted') ||
+        text.contains('quota');
   }
 }

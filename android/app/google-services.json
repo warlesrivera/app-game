@@ -12,7 +12,12 @@
           "package_name": "com.gamevault.gamevault"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "864867283892-2sqmte5euq7hicgvut0gcio2djmj7ov2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyA5GpFLpm8YHNqfZLyR4na5GDk0bGGkV8g"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "864867283892-2sqmte5euq7hicgvut0gcio2djmj7ov2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "864867283892-vte5g9bbous4pao3mv7kgtei5j76u7h7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.gamevault.gamevault"
+              }
+            }
+          ]
         }
       }
     }

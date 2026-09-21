@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/api_client.dart';
@@ -79,7 +80,14 @@ class RawgRemoteDataSource {
       if (data == null) {
         throw const NetworkFailure('empty', 'No se encontró el juego.');
       }
-      return _mapRawgGame(data, isDetailed: true);
+      final game = _mapRawgGame(data, isDetailed: true);
+      final shots = await _getScreenshotUrls(id);
+      return game.copyWith(
+        screenshotUrls: _uniqueUrls([
+          ...shots,
+          ...game.screenshotUrls,
+        ]),
+      );
     } on DioException catch (error) {
       throw NetworkFailure(
         error.response?.statusCode?.toString() ?? 'network',
@@ -97,16 +105,42 @@ class RawgRemoteDataSource {
         },
       );
       final results = response.data?['results'] as List<dynamic>? ?? [];
-      return results
-          .whereType<Map<dynamic, dynamic>>()
-          .map((item) => GameVideo.fromJson(Map<String, dynamic>.from(item)))
-          .where((video) => video.url.isNotEmpty || video.preview.isNotEmpty)
-          .toList();
+      final videos = <GameVideo>[];
+      for (final item in results) {
+        if (item is! Map) {
+          continue;
+        }
+        try {
+          final video = GameVideo.fromJson(Map<String, dynamic>.from(item));
+          if (video.url.isNotEmpty || video.preview.isNotEmpty) {
+            videos.add(video);
+          }
+        } catch (error) {
+          debugPrint('RAWG movie parse error: $error');
+        }
+      }
+      return videos;
     } on DioException catch (error) {
       throw NetworkFailure(
         error.response?.statusCode?.toString() ?? 'network',
         'No se pudieron cargar los tráilers.',
       );
+    }
+  }
+
+  Future<List<String>> _getScreenshotUrls(int id) async {
+    try {
+      final response = await _apiClient.dio.get<Map<String, dynamic>>(
+        '/games/$id/screenshots',
+        queryParameters: {
+          'key': _apiClient.apiKey,
+          'page_size': 40,
+        },
+      );
+      final results = response.data?['results'] as List<dynamic>? ?? [];
+      return _shortScreenshotUrls(results);
+    } on DioException {
+      return const [];
     }
   }
 
@@ -162,7 +196,7 @@ Game _mapRawgGame(Map<String, dynamic> json, {bool isDetailed = false}) {
       ..._shortScreenshotUrls(json['short_screenshots']),
       if (json['background_image_additional'] is String)
         json['background_image_additional'] as String,
-    ], skip: coverUrl),
+    ]),
     developers: _namedValues(json['developers']),
     publishers: _namedValues(json['publishers']),
     tags: _namedValues(json['tags']).take(16).toList(),
