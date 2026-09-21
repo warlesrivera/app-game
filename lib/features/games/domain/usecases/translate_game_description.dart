@@ -1,15 +1,15 @@
-import '../../../ai_chat/data/providers/gemini_ai_provider.dart';
 import '../models/game.dart';
 import '../repositories/game_repository.dart';
+import '../repositories/game_translator.dart';
 
 class TranslateGameDescription {
   const TranslateGameDescription({
-    required GeminiAiProvider gemini,
+    required GameTranslator translator,
     required GameRepository gameRepository,
-  }) : _gemini = gemini,
+  }) : _translator = translator,
        _gameRepository = gameRepository;
 
-  final GeminiAiProvider _gemini;
+  final GameTranslator _translator;
   final GameRepository _gameRepository;
 
   Future<Game> call(Game game) async {
@@ -21,11 +21,8 @@ class TranslateGameDescription {
     if (existing != null && existing.isNotEmpty) {
       return game;
     }
-    if (!_gemini.isAvailable) {
-      return game;
-    }
 
-    final translated = await _gemini.translateToSpanish(source);
+    final translated = await _translator.translateToSpanish(source);
     if (translated == null || translated.trim().isEmpty) {
       return game;
     }

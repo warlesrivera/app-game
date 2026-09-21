@@ -2,10 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/utils/platform_icon_mapper.dart';
+import '../../../../core/widgets/in_app_browser_page.dart';
 import '../../../../core/widgets/shimmer.dart';
 import '../../../library/domain/models/library_entry.dart';
 import '../../../library/domain/models/library_status.dart';
@@ -359,7 +359,9 @@ class _VideoThumbnail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: video.url.isEmpty ? null : () => _open(video.url),
+      onTap: video.url.isEmpty
+          ? null
+          : () => openInAppWeb(context, video.url, title: video.name),
       child: SizedBox(
         width: 260,
         child: Column(
@@ -410,10 +412,6 @@ class _VideoThumbnail extends StatelessWidget {
       ),
     );
   }
-
-  Future<void> _open(String url) async {
-    await _openExternalUrl(url);
-  }
 }
 
 class _YoutubeTrailerFallback extends StatelessWidget {
@@ -431,7 +429,11 @@ class _YoutubeTrailerFallback extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GestureDetector(
-          onTap: () => _openExternalUrl(_youtubeSearchUrl(gameName)),
+          onTap: () => openInAppWeb(
+            context,
+            _youtubeSearchUrl(gameName),
+            title: 'Tráiler',
+          ),
           child: SizedBox(
             height: 148,
             child: ClipRRect(
@@ -468,7 +470,7 @@ class _YoutubeTrailerFallback extends StatelessWidget {
         const SizedBox(height: 12),
         Text(
           'RAWG no incluye un archivo de tráiler para este juego. '
-          'Ábrelo en YouTube.',
+          'Lo buscamos en YouTube, dentro de la app.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: AppColors.onSurfaceMuted,
           ),
@@ -560,8 +562,8 @@ class _GuideLinkButton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: OutlinedButton.icon(
-        onPressed: () => _openExternalUrl(url),
-        icon: const Icon(Icons.open_in_new_rounded),
+        onPressed: () => openInAppWeb(context, url, title: label),
+        icon: const Icon(Icons.public_rounded),
         label: Text(label),
       ),
     );
@@ -578,17 +580,6 @@ String _youtubeSearchUrl(String gameName) {
   return 'https://www.youtube.com/results?search_query=$query';
 }
 
-Future<void> _openExternalUrl(String url) async {
-  final uri = Uri.tryParse(url);
-  if (uri == null) {
-    return;
-  }
-  await launchUrl(
-    uri,
-    mode: LaunchMode.externalApplication,
-    webOnlyWindowName: '_blank',
-  );
-}
 
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle(this.label);
@@ -647,8 +638,8 @@ class _WebsiteButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
-      onPressed: () => _openExternalUrl(url),
-      icon: const Icon(Icons.open_in_new_rounded),
+      onPressed: () => openInAppWeb(context, url, title: 'Sitio oficial'),
+      icon: const Icon(Icons.public_rounded),
       label: Text(url, overflow: TextOverflow.ellipsis),
     );
   }

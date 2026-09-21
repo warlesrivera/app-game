@@ -26,6 +26,7 @@ import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import '../../features/games/data/datasources/game_local_cache.dart';
 import '../../features/games/data/datasources/hive_game_local_cache.dart';
+import '../../features/games/data/datasources/on_device_translation_service.dart';
 import '../../features/games/data/datasources/rawg_remote_datasource.dart';
 import '../../features/games/data/datasources/wikipedia_guide_remote_datasource.dart';
 import '../../features/games/data/repositories/game_guide_repository_impl.dart';
@@ -33,6 +34,7 @@ import '../../features/games/data/repositories/game_repository_impl.dart';
 import '../../features/games/domain/models/game.dart';
 import '../../features/games/domain/repositories/game_guide_repository.dart';
 import '../../features/games/domain/repositories/game_repository.dart';
+import '../../features/games/domain/repositories/game_translator.dart';
 import '../../features/games/domain/usecases/get_catalog_rows.dart';
 import '../../features/games/domain/usecases/get_discover_games_usecase.dart';
 import '../../features/games/domain/usecases/get_game_details.dart';
@@ -96,9 +98,10 @@ Future<void> configureDependencies() async {
       ),
     )
     ..registerLazySingleton(() => GetGameGuide(getIt()))
+    ..registerLazySingleton<GameTranslator>(OnDeviceTranslationService.new)
     ..registerLazySingleton(
       () => TranslateGameDescription(
-        gemini: getIt(),
+        translator: getIt(),
         gameRepository: getIt(),
       ),
     )

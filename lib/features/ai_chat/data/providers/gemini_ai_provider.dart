@@ -130,20 +130,6 @@ class GeminiAiProvider {
     }
   }
 
-  Future<String?> translateToSpanish(String text) async {
-    if (!isAvailable) {
-      return null;
-    }
-
-    final clipped = text.length > 4500 ? text.substring(0, 4500) : text;
-    return _generatePlain(
-      system:
-          'Traduce al español natural (neutro latinoamericano). '
-          'Devuelve solo la traducción, sin comillas, títulos ni notas.',
-      prompt: clipped,
-    );
-  }
-
   Future<String?> generateStarterGuide(String gameName) async {
     if (!isAvailable) {
       return null;
