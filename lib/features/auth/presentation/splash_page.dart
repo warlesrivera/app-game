@@ -11,7 +11,7 @@ class SplashPage extends StatelessWidget {
 
     return Scaffold(
       body: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -30,7 +30,7 @@ class SplashPage extends StatelessWidget {
                 style: textTheme.displaySmall,
               ),
               const SizedBox(height: 16),
-              const ColoredBox(
+              ColoredBox(
                 color: AppColors.accent,
                 child: SizedBox(width: 48, height: 2),
               ),

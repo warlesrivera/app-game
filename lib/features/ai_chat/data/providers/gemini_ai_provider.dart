@@ -68,7 +68,9 @@ class GeminiAiProvider {
       ),
     );
 
-    final chat = model.startChat(history: _historyContents(gameContext, history));
+    final chat = model.startChat(
+      history: _historyContents(gameContext, history),
+    );
     final response = await _withRetry(
       () => chat.sendMessage(Content.text(clipText(message, 1000) ?? message)),
     );
@@ -128,6 +130,52 @@ class GeminiAiProvider {
       await Future<void>.delayed(const Duration(milliseconds: 700));
       return action();
     }
+  }
+
+  Future<String?> generatePlayerProfile({
+    required int completed,
+    required int abandoned,
+    required int playing,
+    required String favoriteGenre,
+    required List<String> topFavorites,
+    required Map<String, int> genreCounts,
+  }) {
+    if (!isAvailable) {
+      return Future<String?>.value(null);
+    }
+
+    final favorites = topFavorites.isEmpty
+        ? 'sin podio todavía'
+        : topFavorites
+              .asMap()
+              .entries
+              .map((entry) {
+                return '${entry.key + 1}.º ${entry.value}';
+              })
+              .join(', ');
+    final genres = genreCounts.entries
+        .where((entry) => entry.value > 0)
+        .map((entry) => '${entry.key}: ${entry.value}')
+        .join(', ');
+
+    return _generatePlain(
+      system:
+          'Actúa como un analista de videojuegos. Responde SOLO un JSON válido '
+          'en español, sin markdown, con estas claves: '
+          '"title" (título llamativo corto), '
+          '"summary" (máximo 3 líneas, épico y divertido), '
+          '"details" (2 a 4 párrafos que expliquen POR QUÉ llegas a esa lectura: '
+          'orden de favoritos, juegos completados, incompletos/abandonados y géneros).',
+      prompt:
+          'Analiza este perfil de jugador.\n'
+          'Completados: $completed.\n'
+          'Jugando: $playing.\n'
+          'Abandonados: $abandoned.\n'
+          'Género dominante: $favoriteGenre.\n'
+          'Géneros: ${genres.isEmpty ? 'sin datos' : genres}.\n'
+          'Favoritos en orden: $favorites.\n'
+          'Explica cómo el podio y el ritmo de completar o dejar juegos definen su estilo.',
+    );
   }
 
   Future<String?> generateStarterGuide(String gameName) async {

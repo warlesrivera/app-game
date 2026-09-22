@@ -154,24 +154,48 @@ class GetCatalogCollection {
         catalogId: catalogId,
         ordering: '-added',
       ),
-      'nextgen' => const [
+      'nextgen' => [
+        CatalogSectionQuery(
+          id: 'nextgen-this-year',
+          title: 'ESTE AÑO',
+          platforms: '187,186,7',
+          ordering: '-released',
+          dates: GetCatalogRowsUseCase.yearDates(DateTime.now().year),
+        ),
+        CatalogSectionQuery(
+          id: 'nextgen-last-year',
+          title: 'AÑO ANTERIOR',
+          platforms: '187,186,7',
+          ordering: '-added',
+          dates: GetCatalogRowsUseCase.yearDates(DateTime.now().year - 1),
+        ),
+        CatalogSectionQuery(
+          id: 'nextgen-upcoming',
+          title: 'PRÓXIMOS ESTRENOS',
+          platforms: '187,186,7',
+          ordering: 'released',
+          dates: GetCatalogRowsUseCase.upcomingDates(DateTime.now()),
+        ),
         CatalogSectionQuery(
           id: 'nextgen-playstation',
           title: 'PLAYSTATION',
           platforms: '187',
-          ordering: '-added',
+          ordering: '-released',
+          dates: GetCatalogRowsUseCase.lastGenDates(DateTime.now()),
         ),
         CatalogSectionQuery(
           id: 'nextgen-nintendo',
           title: 'NINTENDO',
           platforms: '7',
-          ordering: '-added',
+          ordering: '-released',
+          dates: GetCatalogRowsUseCase.lastGenDates(DateTime.now()),
         ),
         CatalogSectionQuery(
           id: 'nextgen-xbox',
           title: 'XBOX',
           platforms: '186',
-          ordering: '-added',
+          ordering: '-released',
+          dates: GetCatalogRowsUseCase.lastGenDates(DateTime.now()),
         ),
       ],
       'retros' => const [

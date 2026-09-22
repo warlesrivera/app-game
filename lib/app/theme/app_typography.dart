@@ -5,10 +5,9 @@ import 'app_colors.dart';
 
 abstract final class AppTypography {
   static TextTheme textTheme(TextTheme base) {
-    final outfit = GoogleFonts.outfitTextTheme(base).apply(
-      bodyColor: AppColors.onSurface,
-      displayColor: AppColors.onSurface,
-    );
+    final outfit = GoogleFonts.outfitTextTheme(
+      base,
+    ).apply(bodyColor: AppColors.onSurface, displayColor: AppColors.onSurface);
 
     return outfit.copyWith(
       displayLarge: outfit.displayLarge?.copyWith(
@@ -30,9 +29,7 @@ abstract final class AppTypography {
         fontWeight: FontWeight.w700,
         letterSpacing: -0.4,
       ),
-      titleLarge: outfit.titleLarge?.copyWith(
-        fontWeight: FontWeight.w600,
-      ),
+      titleLarge: outfit.titleLarge?.copyWith(fontWeight: FontWeight.w600),
       bodyLarge: outfit.bodyLarge?.copyWith(
         fontWeight: FontWeight.w400,
         height: 1.45,

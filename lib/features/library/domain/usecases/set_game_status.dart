@@ -6,10 +6,7 @@ class SetGameStatus {
 
   final LibraryRepository _repository;
 
-  Future<void> call({
-    required String gameId,
-    required LibraryStatus status,
-  }) {
+  Future<void> call({required String gameId, required LibraryStatus status}) {
     return _repository.setStatus(gameId: gameId, status: status);
   }
 }

@@ -60,4 +60,15 @@ class FirestoreUserRemoteDataSource implements UserRemoteDataSource {
       avatarId: _tempAvatarId,
     );
   }
+
+  @override
+  Future<void> updateAvatarUrl({
+    required String uid,
+    required String avatarUrl,
+  }) {
+    return _firestore.collection(_usersCollection).doc(uid).set({
+      'avatarUrl': avatarUrl,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
 }

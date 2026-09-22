@@ -255,13 +255,13 @@ class _CoverFrame extends StatelessWidget {
                   fit: BoxFit.cover,
                   filterQuality: FilterQuality.medium,
                   errorBuilder: (_, _, _) {
-                    return const ColoredBox(color: AppColors.surface);
+                    return ColoredBox(color: AppColors.surface);
                   },
                   loadingBuilder: (context, child, progress) {
                     if (progress == null) {
                       return child;
                     }
-                    return const ColoredBox(color: AppColors.surfaceHigh);
+                    return ColoredBox(color: AppColors.surfaceHigh);
                   },
                 )
               : Image.asset(
@@ -269,7 +269,7 @@ class _CoverFrame extends StatelessWidget {
                   fit: BoxFit.cover,
                   filterQuality: FilterQuality.medium,
                   errorBuilder: (_, _, _) {
-                    return const ColoredBox(color: AppColors.surface);
+                    return ColoredBox(color: AppColors.surface);
                   },
                 ),
         ),

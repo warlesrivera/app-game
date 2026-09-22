@@ -99,7 +99,7 @@ class _AiChatPageState extends State<AiChatPage> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 child: Text(
                   error,
-                  style: const TextStyle(color: AppColors.error),
+                  style: TextStyle(color: AppColors.error),
                 ),
               );
             },

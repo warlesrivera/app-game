@@ -129,7 +129,7 @@ class HiveGameLocalCache implements GameLocalCache {
 
   String _catalogKey(String catalogId) => 'catalog_v3_$catalogId';
 
-  String _guideKey(String gameId) => 'guide_$gameId';
+  String _guideKey(String gameId) => 'lore_v1_$gameId';
 
   @override
   Future<List<Game>?> getCatalog(String catalogId) {

@@ -91,11 +91,15 @@ class LibraryPage extends StatelessWidget {
                           onSelected: (_) {
                             context.read<LibraryCubit>().setFilter(filter);
                           },
-                          selectedColor: AppColors.accent.withValues(alpha: 0.28),
+                          selectedColor: AppColors.accent.withValues(
+                            alpha: 0.28,
+                          ),
                           backgroundColor: AppColors.surfaceHigh,
                           showCheckmark: false,
                           side: BorderSide(
-                            color: selected ? AppColors.accent : AppColors.outline,
+                            color: selected
+                                ? AppColors.accent
+                                : AppColors.outline,
                           ),
                           labelStyle: TextStyle(
                             color: selected
@@ -153,7 +157,8 @@ class _LibraryContent extends StatelessWidget {
       return EmptyState(
         icon: Icons.sports_esports_rounded,
         title: 'Tu bóveda está vacía',
-        message: 'Busca un juego y márcalo como jugando, completado o wishlist.',
+        message:
+            'Busca un juego y márcalo como jugando, completado o wishlist.',
         actionLabel: 'Ir a buscar',
         onAction: () => context.go('/search'),
       );
@@ -164,17 +169,17 @@ class _LibraryContent extends StatelessWidget {
       return ListView.separated(
         padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
         itemCount: games.length,
-        separatorBuilder: (_, _) => const Divider(
-          height: 1,
-          color: AppColors.outline,
-          indent: 94,
-        ),
+        separatorBuilder: (_, _) =>
+            Divider(height: 1, color: AppColors.outline, indent: 94),
         itemBuilder: (context, index) {
           final item = games[index];
           final heroTag = 'library-${item.game.id}';
+          final showDeal = state.filter == LibraryFilter.wishlist;
           return GameListRow(
             game: item.game,
             heroTag: heroTag,
+            priceLabel: showDeal ? state.dealFor(item.game.id)?.label : null,
+            priceLoading: showDeal && state.isDealLoading(item.game.id),
             onTap: () => openGameDetails(
               context,
               item.game,
@@ -191,9 +196,12 @@ class _LibraryContent extends StatelessWidget {
       itemBuilder: (context, index) {
         final item = games[index];
         final heroTag = 'library-${item.game.id}';
+        final showDeal = state.filter == LibraryFilter.wishlist;
         return GameGridCard(
           game: item.game,
           heroTag: heroTag,
+          priceLabel: showDeal ? state.dealFor(item.game.id)?.label : null,
+          priceLoading: showDeal && state.isDealLoading(item.game.id),
           onTap: () => openGameDetails(
             context,
             item.game,
@@ -219,10 +227,7 @@ class _LibrarySkeleton extends StatelessWidget {
         itemCount: 8,
         itemBuilder: (_, _) => const Padding(
           padding: EdgeInsets.fromLTRB(16, 10, 16, 10),
-          child: SizedBox(
-            height: 86,
-            child: GameCardSkeleton(fill: true),
-          ),
+          child: SizedBox(height: 86, child: GameCardSkeleton(fill: true)),
         ),
       );
     }

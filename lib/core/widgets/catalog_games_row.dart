@@ -79,7 +79,7 @@ class _CatalogGamesRowState extends State<CatalogGamesRow> {
                                 ),
                           ),
                         ),
-                        const Icon(
+                        Icon(
                           Icons.chevron_right_rounded,
                           color: AppColors.accent,
                         ),

@@ -59,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          const Positioned.fill(child: ColoredBox(color: AppColors.background)),
+          Positioned.fill(child: ColoredBox(color: AppColors.background)),
           const Positioned.fill(child: LoginCoverStrips()),
           SafeArea(
             child: Center(
@@ -85,7 +85,7 @@ class _LoginPageState extends State<LoginPage> {
                                 style: textTheme.displaySmall,
                               ),
                               const SizedBox(height: 16),
-                              const Center(
+                              Center(
                                 child: ColoredBox(
                                   color: AppColors.accent,
                                   child: SizedBox(width: 48, height: 2),

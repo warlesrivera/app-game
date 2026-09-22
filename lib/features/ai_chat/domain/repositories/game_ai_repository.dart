@@ -13,4 +13,13 @@ abstract class GameAIRepository {
     GameAiContext? gameContext,
     List<ChatMessage> history,
   });
+
+  Future<String?> generatePlayerProfile({
+    required int completed,
+    required int abandoned,
+    required int playing,
+    required String favoriteGenre,
+    required List<String> topFavorites,
+    required Map<String, int> genreCounts,
+  });
 }

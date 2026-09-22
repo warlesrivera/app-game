@@ -8,6 +8,7 @@ import '../../domain/usecases/sign_in_with_email.dart';
 import '../../domain/usecases/sign_in_with_google.dart';
 import '../../domain/usecases/sign_out.dart';
 import '../../domain/usecases/sign_up_with_email.dart';
+import '../../domain/usecases/update_avatar_url.dart';
 import '../../domain/usecases/watch_auth_state.dart';
 import 'auth_state.dart';
 
@@ -18,10 +19,12 @@ class AuthCubit extends Cubit<AuthState> {
     required SignUpWithEmail signUpWithEmail,
     required SignInWithGoogle signInWithGoogle,
     required SignOut signOut,
+    UpdateAvatarUrl? updateAvatarUrl,
   }) : signInWithEmailUseCase = signInWithEmail,
        signUpWithEmailUseCase = signUpWithEmail,
        signInWithGoogleUseCase = signInWithGoogle,
        signOutUseCase = signOut,
+       _updateAvatarUrl = updateAvatarUrl,
        super(const AuthInitial()) {
     _subscription = watchAuthState().listen(
       _onAuthUser,
@@ -35,6 +38,7 @@ class AuthCubit extends Cubit<AuthState> {
   final SignUpWithEmail signUpWithEmailUseCase;
   final SignInWithGoogle signInWithGoogleUseCase;
   final SignOut signOutUseCase;
+  final UpdateAvatarUrl? _updateAvatarUrl;
   StreamSubscription<AppUser?>? _subscription;
 
   Future<void> signInWithEmail({
@@ -62,6 +66,19 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> signInWithGoogle() {
     return _run(signInWithGoogleUseCase.call);
+  }
+
+  Future<void> updateAvatar(String avatarUrl) async {
+    final current = state;
+    final update = _updateAvatarUrl;
+    if (current is! AuthAuthenticated || update == null) {
+      return;
+    }
+    await update(uid: current.user.id, avatarUrl: avatarUrl);
+    if (isClosed) {
+      return;
+    }
+    emit(AuthAuthenticated(current.user.copyWith(avatarUrl: avatarUrl)));
   }
 
   Future<void> signOut() async {

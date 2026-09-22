@@ -6,4 +6,9 @@ abstract interface class UserRemoteDataSource {
     required String email,
     required String name,
   });
+
+  Future<void> updateAvatarUrl({
+    required String uid,
+    required String avatarUrl,
+  });
 }

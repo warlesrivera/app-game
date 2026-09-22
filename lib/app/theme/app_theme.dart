@@ -2,103 +2,114 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
+import 'app_palette.dart';
 import 'app_typography.dart';
 
 abstract final class AppTheme {
-  static const SystemUiOverlayStyle systemUi = SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-    statusBarBrightness: Brightness.dark,
-    systemNavigationBarColor: AppColors.background,
-    systemNavigationBarIconBrightness: Brightness.light,
-  );
+  static SystemUiOverlayStyle systemUiFor(AppPalette palette) {
+    final darkIcons = !palette.isDark;
+    return SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: darkIcons ? Brightness.dark : Brightness.light,
+      statusBarBrightness: palette.isDark ? Brightness.dark : Brightness.light,
+      systemNavigationBarColor: palette.background,
+      systemNavigationBarIconBrightness: darkIcons
+          ? Brightness.dark
+          : Brightness.light,
+    );
+  }
 
-  static ThemeData get dark {
-    const colorScheme = ColorScheme.dark(
-      primary: AppColors.accent,
-      onPrimary: AppColors.background,
-      secondary: AppColors.accent,
-      onSecondary: AppColors.background,
-      surface: AppColors.surface,
-      onSurface: AppColors.onSurface,
-      error: AppColors.error,
-      onError: AppColors.onSurface,
-      outline: AppColors.outline,
+  static SystemUiOverlayStyle get systemUi => systemUiFor(AppColors.palette);
+
+  static ThemeData get dark => from(AppPalette.dark(AccentCatalog.gold));
+
+  static ThemeData from(AppPalette palette) {
+    final colorScheme = ColorScheme(
+      brightness: palette.brightness,
+      primary: palette.accent,
+      onPrimary: palette.onAccent,
+      secondary: palette.accent,
+      onSecondary: palette.onAccent,
+      surface: palette.surface,
+      onSurface: palette.onSurface,
+      error: palette.error,
+      onError: palette.onSurface,
+      outline: palette.outline,
     );
 
     final base = ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
+      brightness: palette.brightness,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: AppColors.background,
-      canvasColor: AppColors.background,
+      scaffoldBackgroundColor: palette.background,
+      canvasColor: palette.background,
     );
 
     return base.copyWith(
       textTheme: AppTypography.textTheme(base.textTheme),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         elevation: 0,
         centerTitle: false,
         backgroundColor: Colors.transparent,
-        foregroundColor: AppColors.onSurface,
-        systemOverlayStyle: systemUi,
+        foregroundColor: palette.onSurface,
+        systemOverlayStyle: systemUiFor(palette),
       ),
-      dividerColor: AppColors.outline,
-      tabBarTheme: const TabBarThemeData(
-        indicatorColor: AppColors.accent,
-        labelColor: AppColors.accent,
-        unselectedLabelColor: AppColors.onSurfaceMuted,
-        dividerColor: AppColors.outline,
+      dividerColor: palette.outline,
+      tabBarTheme: TabBarThemeData(
+        indicatorColor: palette.accent,
+        labelColor: palette.accent,
+        unselectedLabelColor: palette.onSurfaceMuted,
+        dividerColor: palette.outline,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surfaceHigh,
-        labelStyle: const TextStyle(color: AppColors.onSurfaceMuted),
+        fillColor: palette.surfaceHigh,
+        labelStyle: TextStyle(color: palette.onSurfaceMuted),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.outline),
+          borderSide: BorderSide(color: palette.outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.accent),
+          borderSide: BorderSide(color: palette.accent),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.error),
+          borderSide: BorderSide(color: palette.error),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.error),
+          borderSide: BorderSide(color: palette.error),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.accent,
-          foregroundColor: AppColors.background,
-          disabledBackgroundColor: AppColors.surfaceHigh,
+          backgroundColor: palette.accent,
+          foregroundColor: palette.onAccent,
+          disabledBackgroundColor: palette.surfaceHigh,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
         ),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.surface,
-        selectedItemColor: AppColors.accent,
-        unselectedItemColor: AppColors.onSurfaceMuted,
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: palette.surface,
+        selectedItemColor: palette.accent,
+        unselectedItemColor: palette.onSurfaceMuted,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
-        selectedLabelStyle: TextStyle(
+        selectedLabelStyle: const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
-        unselectedLabelStyle: TextStyle(fontSize: 11),
+        unselectedLabelStyle: const TextStyle(fontSize: 11),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.onSurface,
+          foregroundColor: palette.onSurface,
           minimumSize: const Size.fromHeight(52),
-          side: const BorderSide(color: AppColors.outline),
+          side: BorderSide(color: palette.outline),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),

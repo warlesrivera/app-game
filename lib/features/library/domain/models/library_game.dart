@@ -5,10 +5,7 @@ import 'library_entry.dart';
 import 'library_status.dart';
 
 class LibraryGame extends Equatable {
-  const LibraryGame({
-    required this.game,
-    required this.entry,
-  });
+  const LibraryGame({required this.game, required this.entry});
 
   final Game game;
   final LibraryEntry entry;
@@ -37,6 +34,8 @@ class LibraryStats extends Equatable {
   final int abandoned;
 
   int get total => playing + completed + wishlist + abandoned;
+
+  int get played => playing + completed + abandoned;
 
   factory LibraryStats.fromEntries(Iterable<LibraryEntry> entries) {
     var playing = 0;

@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/models/game.dart';
 import '../../domain/usecases/get_game_details.dart';
+import '../../domain/usecases/get_game_guide.dart';
+import '../../../prices/domain/usecases/get_game_deal.dart';
 import '../../domain/usecases/translate_game_description.dart';
 import 'game_details_state.dart';
 
@@ -11,8 +13,12 @@ class GameDetailsCubit extends Cubit<GameDetailsState> {
     required Game preview,
     required GetGameDetails getGameDetails,
     TranslateGameDescription? translateDescription,
+    GetGameGuide? getGameGuide,
+    GetGameDeal? getGameDeal,
   }) : _getGameDetails = getGameDetails,
        _translateDescription = translateDescription,
+       _getGameGuide = getGameGuide,
+       _getGameDeal = getGameDeal,
        super(
          GameDetailsState(
            game: preview,
@@ -23,6 +29,8 @@ class GameDetailsCubit extends Cubit<GameDetailsState> {
 
   final GetGameDetails _getGameDetails;
   final TranslateGameDescription? _translateDescription;
+  final GetGameGuide? _getGameGuide;
+  final GetGameDeal? _getGameDeal;
 
   Future<void> load() async {
     final id = int.tryParse(state.game.id);
@@ -30,6 +38,7 @@ class GameDetailsCubit extends Cubit<GameDetailsState> {
       if (!isClosed) {
         emit(state.copyWith(loadingDescription: false));
       }
+      await _loadDeal();
       return;
     }
 
@@ -45,6 +54,26 @@ class GameDetailsCubit extends Cubit<GameDetailsState> {
     }
 
     await _loadDetails(id);
+    await _loadDeal();
+  }
+
+  Future<void> _loadDeal() async {
+    final getDeal = _getGameDeal;
+    if (getDeal == null || state.deal != null) {
+      return;
+    }
+    emit(state.copyWith(loadingDeal: true));
+    try {
+      final deal = await getDeal(state.game.name);
+      if (isClosed) {
+        return;
+      }
+      emit(state.copyWith(deal: deal, loadingDeal: false));
+    } catch (_) {
+      if (!isClosed) {
+        emit(state.copyWith(loadingDeal: false));
+      }
+    }
   }
 
   Future<void> _loadDetails(int id) async {
@@ -75,6 +104,27 @@ class GameDetailsCubit extends Cubit<GameDetailsState> {
           error: _messageFrom(error),
         ),
       );
+    }
+  }
+
+  Future<void> loadLore() async {
+    final getGuide = _getGameGuide;
+    if (getGuide == null || state.lore != null || state.loadingLore) {
+      return;
+    }
+
+    emit(state.copyWith(loadingLore: true));
+    try {
+      final lore = await getGuide(state.game);
+      if (isClosed) {
+        return;
+      }
+      emit(state.copyWith(lore: lore, loadingLore: false));
+    } catch (_) {
+      if (isClosed) {
+        return;
+      }
+      emit(state.copyWith(loadingLore: false));
     }
   }
 

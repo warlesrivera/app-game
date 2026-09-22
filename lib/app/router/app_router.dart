@@ -17,6 +17,7 @@ import '../../features/games/domain/models/game.dart';
 import '../../features/games/presentation/game_details/game_details_flow.dart';
 import '../../features/games/presentation/game_details/game_details_page.dart';
 import '../../features/library/presentation/library_page.dart';
+import '../../features/profile/presentation/cubit/profile_cubit.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/search/presentation/cubit/search_cubit.dart';
 import '../../features/search/presentation/search_page.dart';
@@ -100,7 +101,12 @@ final class AppRouter {
                 GoRoute(
                   path: profile,
                   name: 'profile',
-                  builder: (context, state) => const ProfilePage(),
+                  builder: (context, state) {
+                    return BlocProvider(
+                      create: (_) => getIt<ProfileCubit>(),
+                      child: const ProfilePage(),
+                    );
+                  },
                 ),
               ],
             ),

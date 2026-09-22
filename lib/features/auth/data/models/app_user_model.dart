@@ -7,6 +7,7 @@ class AppUserModel {
     required this.name,
     required this.age,
     required this.avatarId,
+    this.avatarUrl,
   });
 
   final String id;
@@ -14,6 +15,7 @@ class AppUserModel {
   final String name;
   final int age;
   final String avatarId;
+  final String? avatarUrl;
 
   factory AppUserModel.fromMap(String id, Map<String, dynamic> data) {
     return AppUserModel(
@@ -22,6 +24,7 @@ class AppUserModel {
       name: data['name'] as String? ?? '',
       age: (data['age'] as num?)?.toInt() ?? 0,
       avatarId: data['avatarId'] as String? ?? 'avatar_01',
+      avatarUrl: data['avatarUrl'] as String?,
     );
   }
 
@@ -32,6 +35,7 @@ class AppUserModel {
       name: name,
       age: age,
       avatarId: avatarId,
+      avatarUrl: avatarUrl,
     );
   }
 }

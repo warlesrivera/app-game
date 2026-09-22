@@ -40,7 +40,7 @@ class _ShimmerState extends State<Shimmer> with SingleTickerProviderStateMixin {
             return LinearGradient(
               begin: Alignment(-1.2 + 2.4 * _controller.value, -0.2),
               end: Alignment(-0.2 + 2.4 * _controller.value, 0.2),
-              colors: const [
+              colors: [
                 AppColors.surface,
                 AppColors.surfaceHigh,
                 Color(0xFF2A2E3A),

@@ -1,5 +1,4 @@
 import '../models/game.dart';
-import '../models/game_video.dart';
 
 abstract interface class GameRepository {
   Future<List<Game>> getDiscoverGames({int page = 1});
@@ -9,8 +8,6 @@ abstract interface class GameRepository {
   Future<Game?> getGameById(String id);
 
   Future<Game> getGameDetails(int id);
-
-  Future<List<GameVideo>> getGameVideos(int id);
 
   Future<List<Game>> getGamesByIds(List<String> ids);
 

@@ -69,7 +69,7 @@ class CatalogCollectionPage extends StatelessWidget {
       body: BlocBuilder<CatalogCollectionCubit, CatalogCollectionState>(
         builder: (context, state) {
           if (state.loading && state.sections.isEmpty) {
-            return const Center(
+            return Center(
               child: CircularProgressIndicator(color: AppColors.accent),
             );
           }
@@ -170,7 +170,7 @@ class _SectionBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (section.loading && section.games.isEmpty) {
-      return const Center(
+      return Center(
         child: CircularProgressIndicator(color: AppColors.accent),
       );
     }
@@ -239,7 +239,7 @@ class _GamesList extends StatelessWidget {
         if (index >= section.games.length - 1) {
           return const SizedBox.shrink();
         }
-        return const Divider(
+        return Divider(
           height: 1,
           color: AppColors.outline,
           indent: 94,
@@ -276,7 +276,7 @@ class _MoreButton extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
       child: Center(
         child: section.loadingMore
-            ? const SizedBox(
+            ? SizedBox(
                 width: 28,
                 height: 28,
                 child: CircularProgressIndicator(

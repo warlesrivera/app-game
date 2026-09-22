@@ -44,11 +44,15 @@ class GameGridCard extends StatelessWidget {
     required this.game,
     required this.heroTag,
     required this.onTap,
+    this.priceLabel,
+    this.priceLoading = false,
   });
 
   final Game game;
   final String heroTag;
   final VoidCallback onTap;
+  final String? priceLabel;
+  final bool priceLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +61,8 @@ class GameGridCard extends StatelessWidget {
       heroTag: heroTag,
       fill: true,
       onTap: onTap,
+      priceLabel: priceLabel,
+      priceLoading: priceLoading,
     );
   }
 }

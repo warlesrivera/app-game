@@ -11,6 +11,8 @@ class LibraryEntry extends Equatable {
     this.updatedAt,
     this.priceAlerts = false,
     this.targetStores = const [],
+    this.isFavorite = false,
+    this.favoriteRank,
   });
 
   final String gameId;
@@ -20,11 +22,25 @@ class LibraryEntry extends Equatable {
   final DateTime? updatedAt;
   final bool priceAlerts;
   final List<String> targetStores;
+  final bool isFavorite;
+  final int? favoriteRank;
+
+  bool get canBeFavorite => status == LibraryStatus.completed;
+
+  bool get isTopFavorite =>
+      isFavorite &&
+      canBeFavorite &&
+      favoriteRank != null &&
+      favoriteRank! >= 1 &&
+      favoriteRank! <= 3;
 
   LibraryEntry copyWith({
     LibraryStatus? status,
     bool? priceAlerts,
     List<String>? targetStores,
+    bool? isFavorite,
+    int? favoriteRank,
+    bool clearFavoriteRank = false,
   }) {
     return LibraryEntry(
       gameId: gameId,
@@ -34,6 +50,10 @@ class LibraryEntry extends Equatable {
       updatedAt: updatedAt,
       priceAlerts: priceAlerts ?? this.priceAlerts,
       targetStores: targetStores ?? this.targetStores,
+      isFavorite: isFavorite ?? this.isFavorite,
+      favoriteRank: clearFavoriteRank
+          ? null
+          : favoriteRank ?? this.favoriteRank,
     );
   }
 
@@ -46,5 +66,7 @@ class LibraryEntry extends Equatable {
     updatedAt,
     priceAlerts,
     targetStores,
+    isFavorite,
+    favoriteRank,
   ];
 }

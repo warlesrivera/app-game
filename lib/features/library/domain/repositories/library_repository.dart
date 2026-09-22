@@ -12,4 +12,10 @@ abstract interface class LibraryRepository {
   });
 
   Future<void> removeGame(String gameId);
+
+  Future<void> setFavorite({required String gameId, required bool isFavorite});
+
+  Future<void> setFavoriteRank({required String gameId, int? rank});
+
+  Future<void> setFavoriteOrder(List<String> gameIds);
 }

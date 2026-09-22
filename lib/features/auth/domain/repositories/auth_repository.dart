@@ -17,4 +17,9 @@ abstract interface class AuthRepository {
   Future<void> signInWithGoogle();
 
   Future<void> signOut();
+
+  Future<void> updateAvatarUrl({
+    required String uid,
+    required String avatarUrl,
+  });
 }

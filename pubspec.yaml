@@ -14,7 +14,7 @@ dependencies:
 
   # Estado (Cubit por defecto, Bloc para flujos complejos)
   flutter_bloc: ^9.1.1
-  equatable: ^3.0.0
+  equatable: ^2.0.7
 
   # Modelado inmutable y serialización
   freezed_annotation: ^3.1.0
@@ -51,11 +51,15 @@ dependencies:
   google_generative_ai: ^0.4.7
   webview_flutter: ^4.14.1
   google_mlkit_translation: ^0.15.1
+  flutter_html: ^3.0.0
+  fl_chart: ^1.2.0
 
 # 1.3.x usa @awaitNotRequired, ausente en Dart 3.12 / Flutter 3.44.
 dependency_overrides:
   material_ui: 1.2.0
   cupertino_ui: 1.0.1
+  # flutter_html 3.0.0 llama qs.matches; html 0.15.7 lo eliminó.
+  html: 0.15.6
 
 dev_dependencies:
   flutter_test:

@@ -17,6 +17,24 @@ class GetCatalogRowsUseCase {
     return '${stamp(from)},${stamp(to)}';
   }
 
+  static String yearDates(int year) {
+    return _range(DateTime(year, 1, 1), DateTime(year, 12, 31));
+  }
+
+  static String lastGenDates(DateTime now) {
+    return _range(
+      DateTime(now.year - 1, 1, 1),
+      DateTime(now.year + 2, 12, 31),
+    );
+  }
+
+  static String upcomingDates(DateTime now) {
+    final tomorrow = DateTime(now.year, now.month, now.day).add(
+      const Duration(days: 1),
+    );
+    return _range(tomorrow, DateTime(now.year + 2, 12, 31));
+  }
+
   static List<CatalogQuery> queriesFor(DateTime now) {
     final dayShift = now.day % 4;
     final novedadesFrom = now.subtract(const Duration(days: 240));
@@ -54,9 +72,9 @@ class GetCatalogRowsUseCase {
       CatalogQuery(
         id: 'nextgen',
         title: 'ÚLTIMA GENERACIÓN',
-        platforms: '187,186',
-        ordering: '-added',
-        page: 2 + (dayShift % 3),
+        platforms: '187,186,7',
+        ordering: '-released',
+        dates: lastGenDates(now),
       ),
       CatalogQuery(
         id: 'novedades',

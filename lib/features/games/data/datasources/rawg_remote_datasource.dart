@@ -1,10 +1,8 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/api_client.dart';
 import '../../domain/models/game.dart';
-import '../../domain/models/game_video.dart';
 
 class RawgRemoteDataSource {
   RawgRemoteDataSource(this._apiClient);
@@ -96,38 +94,6 @@ class RawgRemoteDataSource {
     }
   }
 
-  Future<List<GameVideo>> getGameVideos(int id) async {
-    try {
-      final response = await _apiClient.dio.get<Map<String, dynamic>>(
-        '/games/$id/movies',
-        queryParameters: {
-          'key': _apiClient.apiKey,
-        },
-      );
-      final results = response.data?['results'] as List<dynamic>? ?? [];
-      final videos = <GameVideo>[];
-      for (final item in results) {
-        if (item is! Map) {
-          continue;
-        }
-        try {
-          final video = GameVideo.fromJson(Map<String, dynamic>.from(item));
-          if (video.url.isNotEmpty || video.preview.isNotEmpty) {
-            videos.add(video);
-          }
-        } catch (error) {
-          debugPrint('RAWG movie parse error: $error');
-        }
-      }
-      return videos;
-    } on DioException catch (error) {
-      throw NetworkFailure(
-        error.response?.statusCode?.toString() ?? 'network',
-        'No se pudieron cargar los tráilers.',
-      );
-    }
-  }
-
   Future<List<String>> _getScreenshotUrls(int id) async {
     try {
       final response = await _apiClient.dio.get<Map<String, dynamic>>(
@@ -208,7 +174,6 @@ Game _mapRawgGame(Map<String, dynamic> json, {bool isDetailed = false}) {
     playtime: (json['playtime'] as num?)?.toInt(),
     ratingsCount: (json['ratings_count'] as num?)?.toInt(),
     esrbRating: _esrbName(json['esrb_rating']),
-    trailerPreviewUrl: null,
     redditUrl: _nonEmpty(json['reddit_url'] as String?),
   );
 }

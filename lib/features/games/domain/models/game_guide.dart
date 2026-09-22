@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 class GameGuide extends Equatable {
   const GameGuide({
+    this.html,
     this.summary,
     this.sourceLabel,
     this.wikiUrl,
@@ -10,6 +11,7 @@ class GameGuide extends Equatable {
     this.redditUrl,
   });
 
+  final String? html;
   final String? summary;
   final String? sourceLabel;
   final String? wikiUrl;
@@ -17,7 +19,19 @@ class GameGuide extends Equatable {
   final String? ignUrl;
   final String? redditUrl;
 
-  bool get hasText => summary != null && summary!.trim().isNotEmpty;
+  String? get content {
+    final rich = html?.trim();
+    if (rich != null && rich.isNotEmpty) {
+      return rich;
+    }
+    final plain = summary?.trim();
+    if (plain != null && plain.isNotEmpty) {
+      return plain;
+    }
+    return null;
+  }
+
+  bool get hasText => content != null;
 
   bool get hasLinks =>
       wikiUrl != null ||
@@ -29,6 +43,7 @@ class GameGuide extends Equatable {
 
   Map<String, dynamic> toJson() {
     return {
+      'html': html,
       'summary': summary,
       'sourceLabel': sourceLabel,
       'wikiUrl': wikiUrl,
@@ -40,6 +55,7 @@ class GameGuide extends Equatable {
 
   factory GameGuide.fromJson(Map<String, dynamic> json) {
     return GameGuide(
+      html: json['html'] as String?,
       summary: json['summary'] as String?,
       sourceLabel: json['sourceLabel'] as String?,
       wikiUrl: json['wikiUrl'] as String?,
@@ -51,6 +67,7 @@ class GameGuide extends Equatable {
 
   @override
   List<Object?> get props => [
+    html,
     summary,
     sourceLabel,
     wikiUrl,

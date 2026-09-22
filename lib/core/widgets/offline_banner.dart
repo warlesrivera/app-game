@@ -19,7 +19,7 @@ class OfflineBanner extends StatelessWidget {
         if (!state.isOffline) {
           return const SizedBox.shrink();
         }
-        return const Material(
+        return Material(
           color: Color(0xFF3A2A14),
           child: SafeArea(
             bottom: false,

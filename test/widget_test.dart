@@ -16,7 +16,6 @@ import 'package:gamevault/features/auth/presentation/splash_page.dart';
 import 'package:gamevault/features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import 'package:gamevault/features/dashboard/presentation/dashboard_page.dart';
 import 'package:gamevault/features/games/domain/models/game.dart';
-import 'package:gamevault/features/games/domain/models/game_video.dart';
 import 'package:gamevault/features/games/domain/repositories/game_repository.dart';
 import 'package:gamevault/features/games/presentation/game_details/game_details_page.dart';
 import 'package:gamevault/features/games/domain/usecases/get_catalog_rows.dart';
@@ -29,11 +28,15 @@ import 'package:gamevault/features/library/domain/models/library_entry.dart';
 import 'package:gamevault/features/library/domain/models/library_status.dart';
 import 'package:gamevault/features/library/domain/repositories/library_repository.dart';
 import 'package:gamevault/features/library/domain/usecases/remove_game_from_library.dart';
+import 'package:gamevault/features/library/domain/usecases/set_favorite_rank.dart';
+import 'package:gamevault/features/library/domain/usecases/set_game_favorite.dart';
 import 'package:gamevault/features/library/domain/usecases/set_game_status.dart';
 import 'package:gamevault/features/library/domain/usecases/watch_library.dart';
 import 'package:gamevault/features/library/presentation/cubit/library_cubit.dart';
 import 'package:gamevault/features/library/presentation/library_page.dart';
+import 'package:gamevault/features/prices/domain/models/game_deal.dart';
 import 'package:gamevault/features/prices/domain/repositories/price_repository.dart';
+import 'package:gamevault/features/prices/domain/usecases/get_game_deal.dart';
 import 'package:gamevault/features/prices/domain/usecases/save_price_alert.dart';
 import 'package:gamevault/features/search/presentation/cubit/search_cubit.dart';
 import 'package:gamevault/features/search/presentation/search_page.dart';
@@ -65,6 +68,12 @@ class _FakeAuthRepository implements AuthRepository {
     required String name,
     required String email,
     required String password,
+  }) async {}
+
+  @override
+  Future<void> updateAvatarUrl({
+    required String uid,
+    required String avatarUrl,
   }) async {}
 }
 
@@ -102,9 +111,6 @@ class _FakeGameRepository implements GameRepository {
     return (await getGameById('$id')) ??
         discover.first.copyWith(id: '$id', isDetailed: true);
   }
-
-  @override
-  Future<List<GameVideo>> getGameVideos(int id) async => const [];
 
   @override
   Future<List<Game>> getGamesByIds(List<String> ids) async {
@@ -160,6 +166,12 @@ class _IdleAuthRepository implements AuthRepository {
     required String email,
     required String password,
   }) async {}
+
+  @override
+  Future<void> updateAvatarUrl({
+    required String uid,
+    required String avatarUrl,
+  }) async {}
 }
 
 class _FakeLibraryRepository implements LibraryRepository {
@@ -177,6 +189,18 @@ class _FakeLibraryRepository implements LibraryRepository {
 
   @override
   Future<void> removeGame(String gameId) async {}
+
+  @override
+  Future<void> setFavorite({
+    required String gameId,
+    required bool isFavorite,
+  }) async {}
+
+  @override
+  Future<void> setFavoriteRank({required String gameId, int? rank}) async {}
+
+  @override
+  Future<void> setFavoriteOrder(List<String> gameIds) async {}
 }
 
 class _FakePriceRepository implements PriceRepository {
@@ -186,6 +210,9 @@ class _FakePriceRepository implements PriceRepository {
     required bool enabled,
     required List<String> stores,
   }) async {}
+
+  @override
+  Future<GameDeal?> findDealByTitle(String title) async => null;
 }
 
 AuthCubit _buildCubit(Stream<AppUser?> stream) {
@@ -211,17 +238,17 @@ void main() {
       ..registerLazySingleton(() => GetGamesByIds(getIt()))
       ..registerLazySingleton(() => GetGameDetails(getIt()))
       ..registerFactoryParam<GameDetailsCubit, Game, String>(
-        (game, _) => GameDetailsCubit(
-          preview: game,
-          getGameDetails: getIt(),
-        ),
+        (game, _) => GameDetailsCubit(preview: game, getGameDetails: getIt()),
       )
       ..registerLazySingleton<LibraryRepository>(_FakeLibraryRepository.new)
       ..registerLazySingleton(() => WatchLibrary(getIt()))
       ..registerLazySingleton(() => SetGameStatus(getIt()))
       ..registerLazySingleton(() => RemoveGameFromLibrary(getIt()))
+      ..registerLazySingleton(() => SetGameFavorite(getIt()))
+      ..registerLazySingleton(() => SetFavoriteRank(getIt()))
       ..registerLazySingleton<PriceRepository>(_FakePriceRepository.new)
       ..registerLazySingleton(() => SavePriceAlert(getIt()))
+      ..registerLazySingleton(() => GetGameDeal(getIt()))
       ..registerLazySingleton(() => GetCatalogRowsUseCase(getIt()))
       ..registerFactory(() => DashboardCubit(getCatalogRows: getIt()))
       ..registerFactory(() => SearchCubit(searchGames: getIt()))
@@ -231,15 +258,20 @@ void main() {
           watchLibrary: getIt(),
           setGameStatus: getIt(),
           removeGameFromLibrary: getIt(),
+          setGameFavorite: getIt(),
+          setFavoriteRank: getIt(),
           getGamesByIds: getIt(),
           savePriceAlert: getIt(),
+          getGameDeal: getIt(),
         ),
       );
   });
 
   tearDownAll(getIt.reset);
 
-  testWidgets('muestra el Splash mientras Auth está en initial', (tester) async {
+  testWidgets('muestra el Splash mientras Auth está en initial', (
+    tester,
+  ) async {
     final cubit = _buildCubit(const Stream.empty());
     addTearDown(cubit.close);
 

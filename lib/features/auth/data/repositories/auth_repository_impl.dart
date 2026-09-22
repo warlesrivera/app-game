@@ -59,6 +59,14 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> signOut() => authDataSource.signOut();
 
+  @override
+  Future<void> updateAvatarUrl({
+    required String uid,
+    required String avatarUrl,
+  }) {
+    return userDataSource.updateAvatarUrl(uid: uid, avatarUrl: avatarUrl);
+  }
+
   Future<AppUser> _ensureProfile(
     firebase_auth.User firebaseUser, {
     String? fallbackName,

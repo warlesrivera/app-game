@@ -14,6 +14,11 @@ class GameCard extends StatelessWidget {
     this.heroTag,
     this.onTap,
     this.fill = false,
+    this.priceLabel,
+    this.priceLoading = false,
+    this.frameColor,
+    this.badgeLabel,
+    this.badgeColor,
   });
 
   static const double width = 152;
@@ -23,6 +28,11 @@ class GameCard extends StatelessWidget {
   final String? heroTag;
   final VoidCallback? onTap;
   final bool fill;
+  final String? priceLabel;
+  final bool priceLoading;
+  final Color? frameColor;
+  final String? badgeLabel;
+  final Color? badgeColor;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +46,10 @@ class GameCard extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.outline),
+            border: Border.all(
+              color: frameColor ?? AppColors.outline,
+              width: frameColor == null ? 1 : 1.4,
+            ),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x73000000),
@@ -71,6 +84,15 @@ class GameCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (badgeLabel != null && badgeColor != null)
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: _FameBadge(
+                      label: badgeLabel!,
+                      color: badgeColor!,
+                    ),
+                  ),
                 Positioned(
                   left: 12,
                   right: 12,
@@ -96,7 +118,7 @@ class GameCard extends StatelessWidget {
                         const SizedBox(height: 6),
                       Text(
                         game.name,
-                        maxLines: 2,
+                        maxLines: priceLoading || priceLabel != null ? 1 : 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           color: AppColors.onSurface,
@@ -104,6 +126,14 @@ class GameCard extends StatelessWidget {
                           height: 1.2,
                         ),
                       ),
+                      if (priceLoading || priceLabel != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: DealPriceTag(
+                            label: priceLabel,
+                            loading: priceLoading,
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -126,17 +156,57 @@ class GameCard extends StatelessWidget {
   }
 }
 
+class _FameBadge extends StatelessWidget {
+  const _FameBadge({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.35),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: const Color(0xFF121212),
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class GameListRow extends StatelessWidget {
   const GameListRow({
     super.key,
     required this.game,
     required this.heroTag,
     required this.onTap,
+    this.priceLabel,
+    this.priceLoading = false,
   });
 
   final Game game;
   final String heroTag;
   final VoidCallback onTap;
+  final String? priceLabel;
+  final bool priceLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -177,6 +247,10 @@ class GameListRow extends StatelessWidget {
                         height: 1.2,
                       ),
                     ),
+                    if (priceLoading || priceLabel != null) ...[
+                      const SizedBox(height: 8),
+                      DealPriceTag(label: priceLabel, loading: priceLoading),
+                    ],
                     const SizedBox(height: 8),
                     PlatformIconMapper.row(
                       slugs: game.platformSlugs,
@@ -186,11 +260,64 @@ class GameListRow extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
                 color: AppColors.onSurfaceMuted,
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class DealPriceTag extends StatelessWidget {
+  const DealPriceTag({
+    super.key,
+    required this.label,
+    this.loading = false,
+  });
+
+  static const Color _green = Color(0xFF4ADE80);
+  static const Color _greenSurface = Color(0xFF163323);
+
+  final String? label;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const SizedBox(
+        width: 14,
+        height: 14,
+        child: CircularProgressIndicator(
+          strokeWidth: 1.8,
+          color: _green,
+        ),
+      );
+    }
+    if (label == null || label!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: _greenSurface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: _green.withValues(alpha: 0.45)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+        child: Text(
+          '🏷️ $label',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: _green,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.2,
+            height: 1.2,
           ),
         ),
       ),
@@ -205,15 +332,15 @@ class GameCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const decoration = BoxDecoration(
+    final decoration = BoxDecoration(
       color: AppColors.surfaceHigh,
       borderRadius: BorderRadius.all(Radius.circular(18)),
     );
 
     return Shimmer(
       child: fill
-          ? const SizedBox.expand(child: DecoratedBox(decoration: decoration))
-          : const SizedBox(
+          ? SizedBox.expand(child: DecoratedBox(decoration: decoration))
+          : SizedBox(
               width: GameCard.width,
               height: GameCard.height,
               child: DecoratedBox(decoration: decoration),
@@ -230,7 +357,7 @@ class _Cover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (url == null || url!.isEmpty) {
-      return const ColoredBox(color: AppColors.surfaceHigh);
+      return ColoredBox(color: AppColors.surfaceHigh);
     }
 
     return CachedNetworkImage(
@@ -240,10 +367,10 @@ class _Cover extends StatelessWidget {
       height: double.infinity,
       fadeInDuration: Duration.zero,
       placeholder: (context, _) {
-        return const ColoredBox(color: AppColors.surfaceHigh);
+        return ColoredBox(color: AppColors.surfaceHigh);
       },
       errorWidget: (context, _, _) {
-        return const ColoredBox(color: AppColors.surface);
+        return ColoredBox(color: AppColors.surface);
       },
     );
   }

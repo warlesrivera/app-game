@@ -1,5 +1,4 @@
 import '../../domain/models/game.dart';
-import '../../domain/models/game_video.dart';
 import '../../domain/repositories/game_repository.dart';
 import '../datasources/game_local_cache.dart';
 import '../datasources/rawg_remote_datasource.dart';
@@ -78,11 +77,6 @@ class GameRepositoryImpl implements GameRepository {
           );
     await localCache.saveGame(merged);
     return merged;
-  }
-
-  @override
-  Future<List<GameVideo>> getGameVideos(int id) {
-    return remoteDataSource.getGameVideos(id);
   }
 
   @override

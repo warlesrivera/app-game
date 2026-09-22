@@ -44,7 +44,7 @@ class SearchPage extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: 'Busca un juego',
                   hintStyle: textTheme.bodyLarge,
-                  prefixIcon: const Icon(
+                  prefixIcon: Icon(
                     Icons.search_rounded,
                     color: AppColors.onSurfaceMuted,
                   ),
@@ -56,15 +56,15 @@ class SearchPage extends StatelessWidget {
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: AppColors.outline),
+                    borderSide: BorderSide(color: AppColors.outline),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: AppColors.outline),
+                    borderSide: BorderSide(color: AppColors.outline),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: AppColors.accent),
+                    borderSide: BorderSide(color: AppColors.accent),
                   ),
                 ),
               ),

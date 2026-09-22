@@ -19,20 +19,91 @@ class WikipediaGuideRemoteDataSource {
 
   final Dio _dio;
 
-  Future<GameGuide?> search(String gameName) async {
+  Future<GameGuide?> search(String gameName, {int? releaseYear}) async {
+    final clean = _cleanTitle(gameName);
+    if (clean.isEmpty) {
+      return null;
+    }
+
+    final titles = <String>[
+      '$clean (videojuego)',
+      if (releaseYear != null) '$clean (videojuego de $releaseYear)',
+      clean,
+    ];
+
+    for (final title in titles) {
+      final guide = await _extractByTitle(title);
+      if (guide != null) {
+        return guide;
+      }
+    }
+
+    final found = await _searchTitle(clean);
+    if (found == null) {
+      return null;
+    }
+    return _extractByTitle(found);
+  }
+
+  Future<GameGuide?> _extractByTitle(String title) async {
     try {
-      final searchResponse = await _dio.get<Map<String, dynamic>>(
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/w/api.php',
+        queryParameters: {
+          'action': 'query',
+          'prop': 'extracts',
+          'titles': title,
+          'format': 'json',
+          'formatversion': 2,
+          'redirects': 1,
+          'origin': '*',
+        },
+      );
+      final query = response.data?['query'];
+      if (query is! Map) {
+        return null;
+      }
+      final pages = query['pages'];
+      if (pages is! List || pages.isEmpty || pages.first is! Map) {
+        return null;
+      }
+      final page = Map<String, dynamic>.from(pages.first as Map);
+      if (page['missing'] == true) {
+        return null;
+      }
+      final extract = (page['extract'] as String?)?.trim();
+      if (extract == null || extract.isEmpty) {
+        return null;
+      }
+      final resolved = (page['title'] as String?)?.trim();
+      final wikiTitle = (resolved == null || resolved.isEmpty) ? title : resolved;
+      return GameGuide(
+        html: extract,
+        summary: _plainText(extract),
+        sourceLabel: 'Wikipedia',
+        wikiUrl:
+            'https://es.wikipedia.org/wiki/${Uri.encodeComponent(wikiTitle.replaceAll(' ', '_'))}',
+      );
+    } on DioException {
+      rethrow;
+    }
+  }
+
+  Future<String?> _searchTitle(String gameName) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
         '/w/api.php',
         queryParameters: {
           'action': 'query',
           'list': 'search',
           'srsearch': '$gameName videojuego',
           'format': 'json',
+          'formatversion': 2,
           'origin': '*',
           'srlimit': 1,
         },
       );
-      final query = searchResponse.data?['query'];
+      final query = response.data?['query'];
       if (query is! Map) {
         return null;
       }
@@ -41,31 +112,25 @@ class WikipediaGuideRemoteDataSource {
         return null;
       }
       final title = (results.first as Map)['title'] as String?;
-      if (title == null || title.isEmpty) {
+      if (title == null || title.trim().isEmpty) {
         return null;
       }
-
-      final summaryResponse = await _dio.get<Map<String, dynamic>>(
-        '/api/rest_v1/page/summary/${Uri.encodeComponent(title)}',
-      );
-      final data = summaryResponse.data;
-      if (data == null) {
-        return null;
-      }
-      final extract = (data['extract'] as String?)?.trim();
-      if (extract == null || extract.isEmpty) {
-        return null;
-      }
-      final wikiUrl =
-          data['content_urls']?['desktop']?['page'] as String? ??
-          'https://es.wikipedia.org/wiki/${Uri.encodeComponent(title)}';
-      return GameGuide(
-        summary: extract,
-        sourceLabel: 'Wikipedia',
-        wikiUrl: wikiUrl,
-      );
+      return title.trim();
     } on DioException {
-      return null;
+      rethrow;
     }
+  }
+
+  String _cleanTitle(String gameName) {
+    return gameName
+        .replaceAll(RegExp(r'\s*\(videojuego( de \d{4})?\)\s*$', caseSensitive: false), '')
+        .trim();
+  }
+
+  String _plainText(String html) {
+    return html
+        .replaceAll(RegExp(r'<[^>]+>'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 }
