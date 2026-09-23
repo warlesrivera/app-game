@@ -1,5 +1,6 @@
 import '../models/chat_message.dart';
 import '../models/game_ai_context.dart';
+import '../models/player_vault_context.dart';
 
 abstract class GameAIRepository {
   bool get isAvailable;
@@ -11,6 +12,7 @@ abstract class GameAIRepository {
     required String gameName,
     required String message,
     GameAiContext? gameContext,
+    PlayerVaultContext? vault,
     List<ChatMessage> history,
   });
 

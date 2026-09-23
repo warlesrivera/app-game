@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +5,8 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/navigation/page_curl_math.dart';
+import '../../../../core/navigation/page_curl_transition.dart';
 import '../../../../core/utils/platform_icon_mapper.dart';
 import '../../../../core/widgets/game_card.dart';
 import '../../../../core/widgets/game_cover_hero.dart';
@@ -254,7 +254,7 @@ class _LorePanel extends StatelessWidget {
         const _SectionTitle('LORE'),
         const SizedBox(height: 8),
         Text(
-          'Archivo de Wikipedia. Pasa la hoja como en un libro.',
+          'Archivo de Wikipedia. Pela la esquina de la hoja como en un libro.',
           style: Theme.of(
             context,
           ).textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceMuted),
@@ -292,29 +292,46 @@ class _LoreBook extends StatefulWidget {
 
 class _LoreBookState extends State<_LoreBook>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _flip;
-  late final List<_LoreLeaf> _pages;
+  late final AnimationController _curl;
+  late List<_LoreLeaf> _pages;
   var _index = 0;
-  var _target = 0;
   var _forward = true;
   var _busy = false;
+  var _dragging = false;
   var _dragDx = 0.0;
+  Offset? _pointer;
   Widget? _frontLeaf;
   Widget? _backLeaf;
+
+  PageCurlOrigin get _origin => _forward
+      ? PageCurlOrigin.bottomRight
+      : PageCurlOrigin.bottomLeft;
 
   @override
   void initState() {
     super.initState();
     _pages = _splitLoreLeaves(widget.html);
-    _flip = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 680),
-    );
+    _curl = AnimationController(vsync: this);
+    _curl.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _LoreBook oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.html == widget.html) {
+      return;
+    }
+    _pages = _splitLoreLeaves(widget.html);
+    _index = _index.clamp(0, _pages.length - 1);
   }
 
   @override
   void dispose() {
-    _flip.dispose();
+    _curl.dispose();
     super.dispose();
   }
 
@@ -322,14 +339,23 @@ class _LoreBookState extends State<_LoreBook>
     if (_busy || next == _index || next < 0 || next >= _pages.length) {
       return;
     }
+    final forward = next > _index;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      setState(() => _index = next);
+      return;
+    }
     setState(() {
       _busy = true;
-      _target = next;
-      _forward = next > _index;
+      _forward = forward;
+      _pointer = null;
       _frontLeaf = _sheet(index: _index, scrollable: false);
       _backLeaf = _sheet(index: next, scrollable: false);
     });
-    await _flip.forward(from: 0);
+    await _curl.animateTo(
+      1,
+      duration: const Duration(milliseconds: 720),
+      curve: Curves.easeInCubic,
+    );
     if (!mounted) {
       return;
     }
@@ -339,11 +365,78 @@ class _LoreBookState extends State<_LoreBook>
       _frontLeaf = null;
       _backLeaf = null;
     });
-    _flip.value = 0;
+    _curl.value = 0;
   }
 
-  void _onDragEnd(DragEndDetails details) {
-    if (_busy) {
+  void _beginCurl({
+    required bool forward,
+    required Size size,
+    required Offset local,
+  }) {
+    final next = forward ? _index + 1 : _index - 1;
+    if (_busy || next < 0 || next >= _pages.length) {
+      return;
+    }
+    _dragging = true;
+    _busy = true;
+    _forward = forward;
+    _pointer = local;
+    _frontLeaf = _sheet(index: _index, scrollable: false);
+    _backLeaf = _sheet(index: next, scrollable: false);
+    _curl.stop();
+    _curl.value = PageCurlGeometry.progressFromPointer(
+      size,
+      local,
+      origin: _origin,
+    );
+    setState(() {});
+  }
+
+  void _settle({required bool complete, required double velocity}) {
+    final next = _forward ? _index + 1 : _index - 1;
+    final canComplete = complete && next >= 0 && next < _pages.length;
+    final target = canComplete ? 1.0 : 0.0;
+    final distance = (target - _curl.value).abs();
+    _pointer = null;
+    _curl
+        .animateTo(
+          target,
+          duration: Duration(
+            milliseconds: (420 + distance * 260 - velocity.abs() * 0.04)
+                .clamp(240, 720)
+                .round(),
+          ),
+          curve: canComplete ? Curves.easeInCubic : Curves.easeOutCubic,
+        )
+        .whenComplete(() {
+          if (!mounted) {
+            return;
+          }
+          setState(() {
+            if (canComplete) {
+              _index = next;
+            }
+            _busy = false;
+            _dragging = false;
+            _frontLeaf = null;
+            _backLeaf = null;
+          });
+          _curl.value = 0;
+        });
+  }
+
+  void _onCornerEnd(DragEndDetails details) {
+    if (!_dragging) {
+      return;
+    }
+    _dragging = false;
+    final vx = details.velocity.pixelsPerSecond.dx;
+    final flung = _forward ? vx < -700 : vx > 700;
+    _settle(complete: _curl.value > 0.28 || flung, velocity: vx);
+  }
+
+  void _onSwipeEnd(DragEndDetails details) {
+    if (_busy || _dragging) {
       return;
     }
     final velocity = details.velocity.pixelsPerSecond;
@@ -368,34 +461,95 @@ class _LoreBookState extends State<_LoreBook>
 
   @override
   Widget build(BuildContext context) {
+    final peek = _forward ? _index + 1 : _index - 1;
+    final backIndex = peek.clamp(0, _pages.length - 1);
+
     return Column(
       children: [
         AspectRatio(
           aspectRatio: 0.78,
-          child: GestureDetector(
-            onHorizontalDragStart: (_) => _dragDx = 0,
-            onHorizontalDragUpdate: (details) {
-              _dragDx += details.delta.dx;
-            },
-            onHorizontalDragEnd: _onDragEnd,
-            child: AnimatedBuilder(
-              animation: _flip,
-              builder: (context, _) {
-                final t = Curves.easeInOutCubic.transform(_flip.value);
-                final under = t > 0
-                    ? (_backLeaf ?? _sheet(index: _target, scrollable: false))
-                    : _sheet(index: _index);
-                return Stack(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final size = constraints.biggest;
+              return GestureDetector(
+                onHorizontalDragStart: (_) {
+                  if (!_busy) {
+                    _dragDx = 0;
+                  }
+                },
+                onHorizontalDragUpdate: (details) {
+                  if (!_busy) {
+                    _dragDx += details.delta.dx;
+                  }
+                },
+                onHorizontalDragEnd: _onSwipeEnd,
+                child: Stack(
                   clipBehavior: Clip.none,
                   fit: StackFit.expand,
                   children: [
-                    under,
-                    if (t > 0) _flippingSheet(t),
-                    if (t == 0 && _index < _pages.length - 1) const _CurlHint(),
+                    PageCurlLayer(
+                      progress: _curl.value.clamp(0.0, 1.0),
+                      pointer: _dragging ? _pointer : null,
+                      origin: _origin,
+                      front:
+                          _frontLeaf ??
+                          _sheet(index: _index, scrollable: !_busy),
+                      back:
+                          _backLeaf ??
+                          _sheet(index: backIndex, scrollable: false),
+                    ),
+                    if (!_busy && _index < _pages.length - 1)
+                      const _CurlHint(),
+                    if (!_busy && _index > 0)
+                      const _CurlHint(alignment: Alignment.bottomLeft),
+                    if (_index < _pages.length - 1)
+                      _CornerCurlHandle(
+                        alignment: Alignment.bottomRight,
+                        size: size,
+                        onStart: (local) => _beginCurl(
+                          forward: true,
+                          size: size,
+                          local: local,
+                        ),
+                        onUpdate: (local) {
+                          if (!_dragging) {
+                            return;
+                          }
+                          _pointer = local;
+                          _curl.value = PageCurlGeometry.progressFromPointer(
+                            size,
+                            local,
+                            origin: PageCurlOrigin.bottomRight,
+                          );
+                        },
+                        onEnd: _onCornerEnd,
+                      ),
+                    if (_index > 0)
+                      _CornerCurlHandle(
+                        alignment: Alignment.bottomLeft,
+                        size: size,
+                        onStart: (local) => _beginCurl(
+                          forward: false,
+                          size: size,
+                          local: local,
+                        ),
+                        onUpdate: (local) {
+                          if (!_dragging) {
+                            return;
+                          }
+                          _pointer = local;
+                          _curl.value = PageCurlGeometry.progressFromPointer(
+                            size,
+                            local,
+                            origin: PageCurlOrigin.bottomLeft,
+                          );
+                        },
+                        onEnd: _onCornerEnd,
+                      ),
                   ],
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
         ),
         const SizedBox(height: 12),
@@ -441,81 +595,70 @@ class _LoreBookState extends State<_LoreBook>
       scrollable: scrollable ?? !_busy,
     );
   }
+}
 
-  Widget _flippingSheet(double t) {
-    final angle = t * math.pi;
-    final pastHalf = angle > math.pi / 2;
-    final lift = math.sin(t * math.pi);
-    final alignment = _forward ? Alignment.centerLeft : Alignment.centerRight;
-    final rotateY = _forward ? -angle : angle;
-    final front = _frontLeaf ?? _sheet(index: _index, scrollable: false);
-    final back = _backLeaf ?? _sheet(index: _target, scrollable: false);
+class _CornerCurlHandle extends StatelessWidget {
+  const _CornerCurlHandle({
+    required this.alignment,
+    required this.size,
+    required this.onStart,
+    required this.onUpdate,
+    required this.onEnd,
+  });
 
-    Widget leaf = pastHalf
-        ? Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.rotationY(math.pi),
-            child: back,
-          )
-        : front;
+  final Alignment alignment;
+  final Size size;
+  final ValueChanged<Offset> onStart;
+  final ValueChanged<Offset> onUpdate;
+  final GestureDragEndCallback onEnd;
 
-    leaf = Stack(
-      fit: StackFit.expand,
-      children: [
-        leaf,
-        IgnorePointer(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              gradient: LinearGradient(
-                begin: _forward ? Alignment.centerRight : Alignment.centerLeft,
-                end: _forward ? Alignment.centerLeft : Alignment.centerRight,
-                colors: [
-                  Colors.black.withValues(alpha: 0.08 + lift * 0.28),
-                  Colors.transparent,
-                  Colors.white.withValues(alpha: lift * 0.06),
-                ],
-                stops: const [0, 0.42, 1],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
+  @override
+  Widget build(BuildContext context) {
+    final zone = (size.shortestSide * 0.22).clamp(72.0, 140.0);
+    final fromRight = alignment == Alignment.bottomRight;
 
-    return Transform(
+    Offset toBook(Offset local) {
+      return Offset(
+        fromRight ? size.width - zone + local.dx : local.dx,
+        size.height - zone + local.dy,
+      );
+    }
+
+    return Align(
       alignment: alignment,
-      transform: Matrix4.identity()
-        ..setEntry(3, 2, 0.00135)
-        ..translateByDouble(0.0, -10 * lift, 0.0, 1.0)
-        ..rotateX(lift * 0.07)
-        ..rotateY(rotateY),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.18 + lift * 0.32),
-              blurRadius: 18 + lift * 16,
-              offset: Offset(_forward ? 10 : -10, 14),
-            ),
-          ],
+      child: SizedBox(
+        width: zone,
+        height: zone,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onPanStart: (details) => onStart(toBook(details.localPosition)),
+          onPanUpdate: (details) => onUpdate(toBook(details.localPosition)),
+          onPanEnd: onEnd,
+          onPanCancel: () => onEnd(DragEndDetails()),
         ),
-        child: leaf,
       ),
     );
   }
 }
 
 class _CurlHint extends StatelessWidget {
-  const _CurlHint();
+  const _CurlHint({this.alignment = Alignment.bottomRight});
+
+  final Alignment alignment;
 
   @override
   Widget build(BuildContext context) {
-    return const Align(
-      alignment: Alignment.bottomRight,
+    final flipped = alignment == Alignment.bottomLeft;
+    return Align(
+      alignment: alignment,
       child: IgnorePointer(
-        child: CustomPaint(size: Size(42, 42), painter: _CurlHintPainter()),
+        child: Transform.flip(
+          flipX: flipped,
+          child: const CustomPaint(
+            size: Size(42, 42),
+            painter: _CurlHintPainter(),
+          ),
+        ),
       ),
     );
   }

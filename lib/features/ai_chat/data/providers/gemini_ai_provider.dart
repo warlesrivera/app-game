@@ -2,8 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 import '../../domain/ai_error.dart';
+import '../../domain/models/advisor_limits.dart';
 import '../../domain/models/chat_message.dart';
 import '../../domain/models/game_ai_context.dart';
+import '../../domain/models/player_vault_context.dart';
 
 class GeminiAiProvider {
   GeminiAiProvider({required String apiKey}) : _apiKey = apiKey.trim();
@@ -22,6 +24,7 @@ class GeminiAiProvider {
     required String gameName,
     required String message,
     GameAiContext? gameContext,
+    PlayerVaultContext? vault,
     List<ChatMessage> history = const [],
   }) async {
     if (!isAvailable) {
@@ -36,6 +39,7 @@ class GeminiAiProvider {
           gameName: gameName,
           message: message,
           gameContext: gameContext,
+          vault: vault,
           history: history,
         );
       } catch (error) {
@@ -55,16 +59,26 @@ class GeminiAiProvider {
     required String gameName,
     required String message,
     GameAiContext? gameContext,
+    PlayerVaultContext? vault,
     required List<ChatMessage> history,
   }) async {
     final label = gameContext?.systemLine ?? gameName;
+    final vaultLine = vault != null && vault.hasLibrary
+        ? ' Bóveda: ${vault.compactLine}.'
+        : '';
     final model = GenerativeModel(
       model: modelName,
       apiKey: _apiKey,
+      generationConfig: GenerationConfig(
+        maxOutputTokens: AdvisorLimits.maxOutputTokens,
+        temperature: 0.4,
+        topP: 0.9,
+      ),
       systemInstruction: Content.system(
-        'Eres el asistente de GameVault. Español, breve y útil. '
-        'Juego: $label. No inventes spoilers graves si no te los piden. '
-        'Reutiliza la ficha y el historial; no repitas la sinopsis.',
+        'Asesor GameVault. Español, 2-6 frases. '
+        'Juego: $label.$vaultLine '
+        'Usa solo este contexto. No inventes gustos ni spoilers graves. '
+        'No repitas la ficha ni el perfil.',
       ),
     );
 
@@ -72,7 +86,11 @@ class GeminiAiProvider {
       history: _historyContents(gameContext, history),
     );
     final response = await _withRetry(
-      () => chat.sendMessage(Content.text(clipText(message, 1000) ?? message)),
+      () => chat.sendMessage(
+        Content.text(
+          clipText(message, AdvisorLimits.maxQuestionChars) ?? message,
+        ),
+      ),
     );
     final text = response.text?.trim();
     if (text == null || text.isEmpty) {
@@ -86,9 +104,9 @@ class GeminiAiProvider {
     List<ChatMessage> history,
   ) {
     final contents = <Content>[];
-    final recent = history.length <= 6
+    final recent = history.length <= AdvisorLimits.maxRecentMessages
         ? history
-        : history.sublist(history.length - 6);
+        : history.sublist(history.length - AdvisorLimits.maxRecentMessages);
 
     if (recent.isEmpty) {
       final brief = gameContext?.firstTurnBrief;
@@ -99,7 +117,7 @@ class GeminiAiProvider {
       }
     } else {
       for (final item in recent) {
-        final text = clipText(item.text, 500);
+        final text = clipText(item.text, AdvisorLimits.maxHistoryChars);
         if (text == null) {
           continue;
         }
@@ -153,28 +171,22 @@ class GeminiAiProvider {
                 return '${entry.key + 1}.º ${entry.value}';
               })
               .join(', ');
-    final genres = genreCounts.entries
+    final genres = (genreCounts.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value)))
         .where((entry) => entry.value > 0)
-        .map((entry) => '${entry.key}: ${entry.value}')
-        .join(', ');
+        .take(4)
+        .map((entry) => '${entry.key}:${entry.value}')
+        .join(',');
 
     return _generatePlain(
       system:
-          'Actúa como un analista de videojuegos. Responde SOLO un JSON válido '
-          'en español, sin markdown, con estas claves: '
-          '"title" (título llamativo corto), '
-          '"summary" (máximo 3 líneas, épico y divertido), '
-          '"details" (2 a 4 párrafos que expliquen POR QUÉ llegas a esa lectura: '
-          'orden de favoritos, juegos completados, incompletos/abandonados y géneros).',
+          'Analista de videojuegos. SOLO JSON en español, sin markdown: '
+          '"title" (corto), "summary" (máx 2 líneas), '
+          '"details" (1 o 2 párrafos: por qué, con favoritos y ritmo).',
       prompt:
-          'Analiza este perfil de jugador.\n'
-          'Completados: $completed.\n'
-          'Jugando: $playing.\n'
-          'Abandonados: $abandoned.\n'
-          'Género dominante: $favoriteGenre.\n'
-          'Géneros: ${genres.isEmpty ? 'sin datos' : genres}.\n'
-          'Favoritos en orden: $favorites.\n'
-          'Explica cómo el podio y el ritmo de completar o dejar juegos definen su estilo.',
+          'Perfil: $completed ok, $playing jugando, $abandoned off. '
+          'Género: $favoriteGenre. Top: ${genres.isEmpty ? '-' : genres}. '
+          'Fav: $favorites.',
     );
   }
 

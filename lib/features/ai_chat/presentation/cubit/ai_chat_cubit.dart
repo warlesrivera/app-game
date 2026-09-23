@@ -7,6 +7,7 @@ import '../../../games/domain/models/game.dart';
 import '../../domain/ai_error.dart';
 import '../../domain/models/chat_message.dart';
 import '../../domain/models/game_ai_context.dart';
+import '../../domain/usecases/build_advisor_context.dart';
 import '../../domain/usecases/send_ai_message.dart';
 import '../../domain/usecases/watch_ai_messages.dart';
 import 'ai_chat_state.dart';
@@ -16,11 +17,14 @@ class AiChatCubit extends Cubit<AiChatState> {
     required Game game,
     required SendAiMessage sendAiMessage,
     required WatchAiMessages watchAiMessages,
+    required BuildAdvisorContext buildAdvisorContext,
   }) : gameId = game.id,
        gameName = game.name,
+       _game = game,
        _gameContext = GameAiContext.fromGame(game),
        _sendAiMessage = sendAiMessage,
        _watchAiMessages = watchAiMessages,
+       _buildAdvisorContext = buildAdvisorContext,
        super(const AiChatInitial()) {
     _subscription = _watchAiMessages(gameId).listen(
       (messages) {
@@ -47,9 +51,11 @@ class AiChatCubit extends Cubit<AiChatState> {
 
   final String gameId;
   final String gameName;
+  final Game _game;
   final GameAiContext _gameContext;
   final SendAiMessage _sendAiMessage;
   final WatchAiMessages _watchAiMessages;
+  final BuildAdvisorContext _buildAdvisorContext;
   StreamSubscription<List<ChatMessage>>? _subscription;
   var _sending = false;
   String? _error;
@@ -83,11 +89,16 @@ class AiChatCubit extends Cubit<AiChatState> {
           'Configura GEMINI_API_KEY en .env para usar el asistente.',
         );
       }
+      final vault = await _buildAdvisorContext(
+        question: text,
+        focus: _game,
+      );
       await _sendAiMessage(
         gameId: gameId,
         gameName: gameName,
         message: text,
         gameContext: _gameContext,
+        vault: vault,
         history: prior,
       );
       _error = null;

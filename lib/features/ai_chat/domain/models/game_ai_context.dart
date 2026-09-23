@@ -15,7 +15,7 @@ class GameAiContext {
       year: game.releaseDate?.year,
       genres: game.genres.take(4).toList(),
       platforms: game.platforms.take(4).toList(),
-      synopsis: clipText(game.descriptionEs ?? game.description, 400),
+      synopsis: clipText(game.descriptionEs ?? game.description, 220),
     );
   }
 

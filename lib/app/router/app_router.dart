@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -115,99 +114,30 @@ final class AppRouter {
         GoRoute(
           path: catalogCollection,
           name: 'catalogCollection',
-          pageBuilder: (context, state) {
+          builder: (context, state) {
             final id = state.pathParameters['id'] ?? '';
             final title = state.extra is String ? state.extra as String : id;
-            return CustomTransitionPage<void>(
-              key: state.pageKey,
-              transitionDuration: const Duration(milliseconds: 560),
-              reverseTransitionDuration: const Duration(milliseconds: 420),
-              child: BlocProvider(
-                create: (_) => getIt<CatalogCollectionCubit>(
-                  param1: id,
-                  param2: title,
-                )..load(),
-                child: const CatalogCollectionPage(),
-              ),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                final fade = CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutCubic,
-                  reverseCurve: Curves.easeInCubic,
-                );
-                return FadeTransition(
-                  opacity: fade,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0.04, 0),
-                      end: Offset.zero,
-                    ).animate(
-                      CurvedAnimation(
-                        parent: animation,
-                        curve: Curves.easeOutQuint,
-                      ),
-                    ),
-                    child: child,
-                  ),
-                );
-              },
+            return BlocProvider(
+              create: (_) =>
+                  getIt<CatalogCollectionCubit>(param1: id, param2: title)
+                    ..load(),
+              child: const CatalogCollectionPage(),
             );
           },
         ),
         GoRoute(
           path: gameDetails,
           name: 'gameDetails',
-          pageBuilder: (context, state) {
+          builder: (context, state) {
             final id = state.pathParameters['id'] ?? '';
             final args = GameDetailsArgs.tryParse(state.extra);
             final preview = args?.game ?? Game(id: id, name: 'Juego');
             final heroTag = args?.heroTag ?? 'game-cover-$id';
             final games = args?.pages ?? [preview];
-            return CustomTransitionPage<void>(
-              key: state.pageKey,
-              transitionDuration: const Duration(milliseconds: 720),
-              reverseTransitionDuration: const Duration(milliseconds: 520),
-              child: GameDetailsFlow(
-                games: games,
-                initialIndex: args?.initialIndex ?? 0,
-                heroTag: heroTag,
-              ),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                final fadeIn = CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutCubic,
-                  reverseCurve: Curves.easeInCubic,
-                );
-                final rise = CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutQuint,
-                  reverseCurve: Curves.easeInCubic,
-                );
-                final dimBehind = Tween<double>(begin: 1, end: 0.88).animate(
-                  CurvedAnimation(
-                    parent: secondaryAnimation,
-                    curve: Curves.easeOutCubic,
-                  ),
-                );
-
-                return FadeTransition(
-                  opacity: dimBehind,
-                  child: FadeTransition(
-                    opacity: fadeIn,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.045),
-                        end: Offset.zero,
-                      ).animate(rise),
-                      child: ScaleTransition(
-                        scale: Tween<double>(begin: 0.97, end: 1).animate(rise),
-                        alignment: Alignment.bottomCenter,
-                        child: child,
-                      ),
-                    ),
-                  ),
-                );
-              },
+            return GameDetailsFlow(
+              games: games,
+              initialIndex: args?.initialIndex ?? 0,
+              heroTag: heroTag,
             );
           },
           routes: [
@@ -217,12 +147,12 @@ final class AppRouter {
               builder: (context, state) {
                 final id = state.pathParameters['id'] ?? '';
                 final extra = state.extra;
-                final game = extra is Game ? extra : Game(id: id, name: 'Juego');
+                final game = extra is Game
+                    ? extra
+                    : Game(id: id, name: 'Juego');
                 return BlocProvider(
-                  create: (_) => getIt<AiChatCubit>(
-                    param1: game,
-                    param2: game.name,
-                  ),
+                  create: (_) =>
+                      getIt<AiChatCubit>(param1: game, param2: game.name),
                   child: AiChatPage(gameName: game.name),
                 );
               },

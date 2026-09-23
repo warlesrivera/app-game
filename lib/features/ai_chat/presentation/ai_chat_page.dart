@@ -73,7 +73,7 @@ class _AiChatPageState extends State<AiChatPage> {
                         child: Padding(
                           padding: EdgeInsets.only(top: 8),
                           child: _Bubble(
-                            text: 'Pensando…',
+                            text: 'Revisando tu biblioteca…',
                             isUser: false,
                           ),
                         ),

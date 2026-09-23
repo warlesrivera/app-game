@@ -1,5 +1,6 @@
 import '../models/chat_message.dart';
 import '../models/game_ai_context.dart';
+import '../models/player_vault_context.dart';
 import '../repositories/game_ai_repository.dart';
 
 class SendAiMessage {
@@ -14,6 +15,7 @@ class SendAiMessage {
     required String gameName,
     required String message,
     GameAiContext? gameContext,
+    PlayerVaultContext? vault,
     List<ChatMessage> history = const [],
   }) {
     return _repository.sendMessage(
@@ -21,6 +23,7 @@ class SendAiMessage {
       gameName: gameName,
       message: message,
       gameContext: gameContext,
+      vault: vault,
       history: history,
     );
   }

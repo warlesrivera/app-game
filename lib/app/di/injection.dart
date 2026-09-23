@@ -4,10 +4,12 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../core/network/api_client.dart';
 import '../../core/network/connectivity_bloc.dart';
+import '../../features/ai_chat/data/datasources/advisor_reply_cache.dart';
 import '../../features/ai_chat/data/datasources/ai_chat_remote_datasource.dart';
 import '../../features/ai_chat/data/providers/gemini_ai_provider.dart';
 import '../../features/ai_chat/data/repositories/game_ai_repository_impl.dart';
 import '../../features/ai_chat/domain/repositories/game_ai_repository.dart';
+import '../../features/ai_chat/domain/usecases/build_advisor_context.dart';
 import '../../features/ai_chat/domain/usecases/send_ai_message.dart';
 import '../../features/ai_chat/domain/usecases/watch_ai_messages.dart';
 import '../../features/ai_chat/presentation/cubit/ai_chat_cubit.dart';
@@ -76,6 +78,9 @@ Future<void> configureDependencies() async {
   final gameCacheBox = Hive.isBoxOpen(HiveGameLocalCache.boxName)
       ? Hive.box<dynamic>(HiveGameLocalCache.boxName)
       : await Hive.openBox<dynamic>(HiveGameLocalCache.boxName);
+  final advisorCacheBox = Hive.isBoxOpen(AdvisorReplyCache.boxName)
+      ? Hive.box<dynamic>(AdvisorReplyCache.boxName)
+      : await Hive.openBox<dynamic>(AdvisorReplyCache.boxName);
 
   getIt
     ..registerLazySingleton(
@@ -197,16 +202,29 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton(
       () => GeminiAiProvider(apiKey: dotenv.env['GEMINI_API_KEY'] ?? ''),
     )
+    ..registerLazySingleton(() => AdvisorReplyCache(advisorCacheBox))
     ..registerLazySingleton<GameAIRepository>(
-      () => GameAIRepositoryImpl(remote: getIt(), provider: getIt()),
+      () => GameAIRepositoryImpl(
+        remote: getIt(),
+        provider: getIt(),
+        cache: getIt(),
+      ),
     )
     ..registerLazySingleton(() => SendAiMessage(getIt()))
     ..registerLazySingleton(() => WatchAiMessages(getIt()))
+    ..registerLazySingleton(
+      () => BuildAdvisorContext(
+        watchLibrary: getIt(),
+        getGamesByIds: getIt(),
+        analysisRemote: getIt(),
+      ),
+    )
     ..registerFactoryParam<AiChatCubit, Game, String>(
       (game, _) => AiChatCubit(
         game: game,
         sendAiMessage: getIt(),
         watchAiMessages: getIt(),
+        buildAdvisorContext: getIt(),
       ),
     );
 }
