@@ -15,6 +15,10 @@ import '../../features/dashboard/presentation/dashboard_page.dart';
 import '../../features/games/domain/models/game.dart';
 import '../../features/games/presentation/game_details/game_details_flow.dart';
 import '../../features/games/presentation/game_details/game_details_page.dart';
+import '../../features/gaming_advisor/presentation/cubit/gaming_advisor_cubit.dart';
+import '../../features/gaming_advisor/presentation/pages/gaming_advisor_page.dart';
+import '../../features/gaming_advisor/presentation/pages/gaming_memory_page.dart';
+import '../../features/gaming_advisor/presentation/pages/gaming_profile_page.dart';
 import '../../features/library/presentation/library_page.dart';
 import '../../features/profile/presentation/cubit/profile_cubit.dart';
 import '../../features/profile/presentation/profile_page.dart';
@@ -111,6 +115,48 @@ final class AppRouter {
             ),
           ],
         ),
+        ShellRoute(
+          builder: (context, state, child) {
+            return BlocProvider(
+              create: (_) => getIt<GamingAdvisorCubit>()..loadAdvisor(),
+              child: child,
+            );
+          },
+          routes: [
+            GoRoute(
+              path: advisor,
+              name: 'gamingAdvisor',
+              builder: (context, state) {
+                final extra = state.extra;
+                return GamingAdvisorPage(
+                  launch: extra is AdvisorLaunch ? extra : null,
+                );
+              },
+              routes: [
+                GoRoute(
+                  path: 'profile',
+                  name: 'gamingProfile',
+                  builder: (context, state) => const GamingProfilePage(),
+                ),
+                GoRoute(
+                  path: 'memory',
+                  name: 'gamingMemory',
+                  builder: (context, state) => const GamingMemoryPage(),
+                ),
+                GoRoute(
+                  path: 'timeline',
+                  name: 'gamingTimeline',
+                  builder: (context, state) => const GamingTimelinePage(),
+                ),
+                GoRoute(
+                  path: 'upcoming',
+                  name: 'upcomingReleases',
+                  builder: (context, state) => const UpcomingReleasesPage(),
+                ),
+              ],
+            ),
+          ],
+        ),
         GoRoute(
           path: catalogCollection,
           name: 'catalogCollection',
@@ -170,6 +216,7 @@ final class AppRouter {
   static const String library = '/library';
   static const String wishlist = '/wishlist';
   static const String profile = '/profile';
+  static const String advisor = '/advisor';
   static const String catalogCollection = '/catalog/:id';
   static const String gameDetails = '/game/:id';
 

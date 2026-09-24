@@ -7,6 +7,8 @@ import 'app.dart';
 import 'di/injection.dart';
 import 'firebase/firebase_initializer.dart';
 import 'theme/app_theme.dart';
+import '../features/prices/data/price_notification_service.dart';
+import '../features/prices/data/price_watch_worker.dart';
 
 Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +19,8 @@ Future<void> bootstrap() async {
   await initializeFirebase();
   await Hive.initFlutter();
   await configureDependencies();
+  await getIt<PriceNotificationService>().requestPermission();
+  await registerPriceWatch();
 
   runApp(GameVaultApp(authCubit: getIt<AuthCubit>()));
 }

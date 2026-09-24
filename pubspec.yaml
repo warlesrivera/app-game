@@ -53,6 +53,8 @@ dependencies:
   google_mlkit_translation: ^0.15.1
   flutter_html: ^3.0.0
   fl_chart: ^1.2.0
+  workmanager: ^0.9.0+3
+  flutter_local_notifications: ^19.4.2
 
 # 1.3.x usa @awaitNotRequired, ausente en Dart 3.12 / Flutter 3.44.
 dependency_overrides:

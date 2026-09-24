@@ -10,6 +10,7 @@ import '../../../games/domain/usecases/get_games_by_ids.dart';
 import '../../../prices/domain/models/game_deal.dart';
 import '../../../prices/domain/usecases/get_game_deal.dart';
 import '../../../prices/domain/usecases/save_price_alert.dart';
+import '../../../prices/data/wishlist_price_snapshot.dart';
 import '../../domain/models/library_entry.dart';
 import '../../domain/models/library_game.dart';
 import '../../domain/models/library_status.dart';
@@ -71,6 +72,7 @@ class LibraryCubit extends Cubit<LibraryState> {
         _entries = const [];
         _deals = const {};
         _dealToken += 1;
+        unawaited(_clearPriceWatch());
         emit(
           LibraryLoaded(
             entries: const [],
@@ -116,6 +118,7 @@ class LibraryCubit extends Cubit<LibraryState> {
         return;
       }
       emit(_loaded(entries: entries, games: hydrated));
+      unawaited(_syncPriceWatch(hydrated));
       unawaited(_loadWishlistDeals(hydrated));
     } catch (error) {
       if (isClosed) {
@@ -164,6 +167,24 @@ class LibraryCubit extends Cubit<LibraryState> {
     } catch (_) {
       return LibraryLayout.grid;
     }
+  }
+
+  Future<void> _syncPriceWatch(List<LibraryGame> games) async {
+    if (!Hive.isBoxOpen(WishlistPriceSnapshot.boxName)) {
+      return;
+    }
+    await WishlistPriceSnapshot(
+      Hive.box<dynamic>(WishlistPriceSnapshot.boxName),
+    ).sync(games);
+  }
+
+  Future<void> _clearPriceWatch() async {
+    if (!Hive.isBoxOpen(WishlistPriceSnapshot.boxName)) {
+      return;
+    }
+    await WishlistPriceSnapshot(
+      Hive.box<dynamic>(WishlistPriceSnapshot.boxName),
+    ).clear();
   }
 
   Future<void> _persistLayout() async {

@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../../app/di/injection.dart';
@@ -119,8 +120,15 @@ class _ProfileTab extends StatelessWidget {
             return _ProfileHeader(user: user);
           },
         ),
-        const SizedBox(height: 32),
-        BlocBuilder<LibraryCubit, LibraryState>(
+                const SizedBox(height: 32),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.psychology_alt_outlined, color: AppColors.accent),
+                  title: const Text('Gaming Advisor'),
+                  subtitle: const Text('Tu biblioteca. Tus gustos. Tu próxima aventura.'),
+                  onTap: () => context.pushNamed('gamingAdvisor'),
+                ),
+                BlocBuilder<LibraryCubit, LibraryState>(
           builder: (context, state) {
             final stats = state.stats;
             return Column(

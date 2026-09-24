@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "864867283892-un5veku6mj8elau397pa23cr91otbh9e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.gamevault.gamevault",
+            "certificate_hash": "e9263292b9999b62ba37465ffce3661b34889a92"
+          }
+        },
+        {
           "client_id": "864867283892-2sqmte5euq7hicgvut0gcio2djmj7ov2.apps.googleusercontent.com",
           "client_type": 3
         }

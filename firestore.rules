@@ -15,6 +15,26 @@ service cloud.firestore {
           allow read, write: if request.auth != null && request.auth.uid == userId;
         }
       }
+
+      match /gaming_profile/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      match /gaming_memories/{memoryId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      match /game_experiences/{gameId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      match /advisor_chat/{chatId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+
+        match /messages/{messageId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+      }
     }
   }
 }

@@ -7,6 +7,7 @@ import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/game_card.dart';
 import '../../../core/widgets/game_grid.dart';
 import '../../games/presentation/game_details/game_details_page.dart';
+import '../../gaming_advisor/presentation/pages/gaming_advisor_page.dart';
 import '../domain/models/library_status.dart';
 import 'cubit/library_cubit.dart';
 import 'cubit/library_state.dart';
@@ -69,6 +70,20 @@ class LibraryPage extends StatelessWidget {
                       );
                     },
                   ),
+                  if (title == 'Deseos')
+                    TextButton.icon(
+                      onPressed: () {
+                        context.pushNamed(
+                          'gamingAdvisor',
+                          extra: const AdvisorLaunch(
+                            question:
+                                '¿Cuál de estos juegos de mi wishlist debería jugar primero?',
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.psychology_alt_outlined),
+                      label: const Text('Pregunta al Advisor'),
+                    ),
                 ],
               ),
             ),

@@ -12,6 +12,8 @@ import '../../../../core/widgets/game_card.dart';
 import '../../../../core/widgets/game_cover_hero.dart';
 import '../../../../core/widgets/in_app_browser_page.dart';
 import '../../../../core/widgets/shimmer.dart';
+import '../../../gaming_advisor/presentation/completed_feedback_sheet.dart';
+import '../../../gaming_advisor/presentation/pages/gaming_advisor_page.dart';
 import '../../../library/domain/models/library_entry.dart';
 import '../../../library/domain/models/library_status.dart';
 import '../../../library/presentation/cubit/library_cubit.dart';
@@ -113,7 +115,7 @@ class GameDetailsPage extends StatelessWidget {
                         ),
                         _DealBanner(state: state),
                         const SizedBox(height: 20),
-                        _StatusActions(gameId: game.id),
+                        _StatusActions(gameId: game.id, gameName: game.name),
                         const SizedBox(height: 16),
                         _PriceAlertButton(game: game),
                         const SizedBox(height: 12),
@@ -127,6 +129,20 @@ class GameDetailsPage extends StatelessWidget {
                           },
                           icon: const Icon(Icons.auto_awesome),
                           label: const Text('Pregúntale a la IA'),
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            context.pushNamed(
+                              'gamingAdvisor',
+                              extra: AdvisorLaunch(
+                                question: '¿Me gustaría ${game.name}?',
+                                focusGameId: game.id,
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.psychology_alt_outlined),
+                          label: const Text('Pregunta al Advisor'),
                         ),
                         if (state.error != null) ...[
                           const SizedBox(height: 16),
@@ -1509,9 +1525,10 @@ class _FavoriteButton extends StatelessWidget {
 }
 
 class _StatusActions extends StatelessWidget {
-  const _StatusActions({required this.gameId});
+  const _StatusActions({required this.gameId, required this.gameName});
 
   final String gameId;
+  final String gameName;
 
   static const _actions = [
     (status: LibraryStatus.completed, icon: Icons.check_circle_outline),
@@ -1534,11 +1551,25 @@ class _StatusActions extends StatelessWidget {
                 label: Text(action.status.label),
                 avatar: Icon(action.icon, size: 16),
                 selected: selected == action.status,
-                onSelected: (_) {
-                  context.read<LibraryCubit>().setStatus(
+                onSelected: (_) async {
+                  final wasCompleted = selected == LibraryStatus.completed;
+                  await context.read<LibraryCubit>().setStatus(
                     gameId: gameId,
                     status: action.status,
                   );
+                  if (!context.mounted) {
+                    return;
+                  }
+                  if (action.status == LibraryStatus.completed &&
+                      !wasCompleted &&
+                      context.read<LibraryCubit>().state.entryFor(gameId)?.status ==
+                          LibraryStatus.completed) {
+                    await showCompletedFeedback(
+                      context,
+                      gameId: gameId,
+                      gameName: gameName,
+                    );
+                  }
                 },
                 tooltip: selected == action.status
                     ? 'Quitar de ${action.status.label}'

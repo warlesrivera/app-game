@@ -57,7 +57,15 @@ import '../../features/library/domain/usecases/set_game_favorite.dart';
 import '../../features/library/domain/usecases/set_game_status.dart';
 import '../../features/library/domain/usecases/watch_library.dart';
 import '../../features/library/presentation/cubit/library_cubit.dart';
+import '../../features/gaming_advisor/data/datasources/gaming_advisor_remote_datasource.dart';
+import '../../features/gaming_advisor/data/gemini_advisor_service.dart';
+import '../../features/gaming_advisor/data/repositories/gaming_advisor_repository_impl.dart';
+import '../../features/gaming_advisor/domain/repositories/gaming_advisor_repository.dart';
+import '../../features/gaming_advisor/domain/usecases/ask_gaming_advisor.dart';
+import '../../features/gaming_advisor/presentation/cubit/gaming_advisor_cubit.dart';
 import '../../features/prices/data/datasources/cheapshark_remote_datasource.dart';
+import '../../features/prices/data/price_notification_service.dart';
+import '../../features/prices/data/wishlist_price_snapshot.dart';
 import '../../features/prices/data/repositories/price_repository_impl.dart';
 import '../../features/prices/domain/repositories/price_repository.dart';
 import '../../features/prices/domain/usecases/get_game_deal.dart';
@@ -81,6 +89,9 @@ Future<void> configureDependencies() async {
   final advisorCacheBox = Hive.isBoxOpen(AdvisorReplyCache.boxName)
       ? Hive.box<dynamic>(AdvisorReplyCache.boxName)
       : await Hive.openBox<dynamic>(AdvisorReplyCache.boxName);
+  final priceWatchBox = Hive.isBoxOpen(WishlistPriceSnapshot.boxName)
+      ? Hive.box<dynamic>(WishlistPriceSnapshot.boxName)
+      : await Hive.openBox<dynamic>(WishlistPriceSnapshot.boxName);
 
   getIt
     ..registerLazySingleton(
@@ -185,6 +196,32 @@ Future<void> configureDependencies() async {
     )
     ..registerLazySingleton(() => SavePriceAlert(getIt()))
     ..registerLazySingleton(() => GetGameDeal(getIt()))
+    ..registerLazySingleton(() => WishlistPriceSnapshot(priceWatchBox))
+    ..registerLazySingleton(PriceNotificationService.new)
+    ..registerLazySingleton(GamingAdvisorRemoteDataSource.new)
+    ..registerLazySingleton<GamingAdvisorRepository>(
+      () => GamingAdvisorRepositoryImpl(remote: getIt(), cache: getIt()),
+    )
+    ..registerLazySingleton<AIAdvisorService>(
+      () => GeminiAdvisorService(getIt()),
+    )
+    ..registerLazySingleton(
+      () => AskGamingAdvisor(
+        repository: getIt(),
+        ai: getIt(),
+        watchLibrary: getIt(),
+        getGamesByIds: getIt(),
+      ),
+    )
+    ..registerFactory(
+      () => GamingAdvisorCubit(
+        repository: getIt(),
+        askGamingAdvisor: getIt(),
+        watchLibrary: getIt(),
+        getGamesByIds: getIt(),
+        setGameStatus: getIt(),
+      ),
+    )
     ..registerFactory(
       () => LibraryCubit(
         watchAuthState: getIt(),

@@ -190,6 +190,20 @@ class GeminiAiProvider {
     );
   }
 
+  Future<String> advise({
+    required String systemInstruction,
+    required String prompt,
+  }) async {
+    if (!isAvailable) {
+      throw StateError('Gemini no está configurado.');
+    }
+    final text = await _generatePlain(system: systemInstruction, prompt: prompt);
+    if (text == null || text.isEmpty) {
+      throw StateError('No pude consultar el asistente ahora.');
+    }
+    return text;
+  }
+
   Future<String?> generateStarterGuide(String gameName) async {
     if (!isAvailable) {
       return null;
