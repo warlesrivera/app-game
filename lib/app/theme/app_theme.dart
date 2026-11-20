@@ -12,10 +12,13 @@ abstract final class AppTheme {
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: darkIcons ? Brightness.dark : Brightness.light,
       statusBarBrightness: palette.isDark ? Brightness.dark : Brightness.light,
-      systemNavigationBarColor: palette.background,
+      systemStatusBarContrastEnforced: false,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarDividerColor: Colors.transparent,
       systemNavigationBarIconBrightness: darkIcons
           ? Brightness.dark
           : Brightness.light,
+      systemNavigationBarContrastEnforced: false,
     );
   }
 

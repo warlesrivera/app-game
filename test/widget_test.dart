@@ -26,8 +26,11 @@ import 'package:gamevault/features/games/domain/usecases/search_games_usecase.da
 import 'package:gamevault/features/games/presentation/game_details/game_details_cubit.dart';
 import 'package:gamevault/features/library/domain/models/library_entry.dart';
 import 'package:gamevault/features/library/domain/models/library_status.dart';
+import 'package:gamevault/features/library/domain/models/game_taste.dart';
+import 'package:gamevault/features/library/domain/models/ownership.dart';
 import 'package:gamevault/features/library/domain/repositories/library_repository.dart';
 import 'package:gamevault/features/library/domain/usecases/remove_game_from_library.dart';
+import 'package:gamevault/features/library/domain/usecases/set_game_collection.dart';
 import 'package:gamevault/features/library/domain/usecases/set_favorite_rank.dart';
 import 'package:gamevault/features/library/domain/usecases/set_game_favorite.dart';
 import 'package:gamevault/features/library/domain/usecases/set_game_status.dart';
@@ -201,6 +204,18 @@ class _FakeLibraryRepository implements LibraryRepository {
 
   @override
   Future<void> setFavoriteOrder(List<String> gameIds) async {}
+
+  @override
+  Future<void> setTaste({required String gameId, GameTaste? taste}) async {}
+
+  @override
+  Future<void> setOwnership({
+    required String gameId,
+    required bool owned,
+    OwnershipFormat? format,
+    OwnershipStore? store,
+    String? console,
+  }) async {}
 }
 
 class _FakePriceRepository implements PriceRepository {
@@ -246,6 +261,8 @@ void main() {
       ..registerLazySingleton(() => RemoveGameFromLibrary(getIt()))
       ..registerLazySingleton(() => SetGameFavorite(getIt()))
       ..registerLazySingleton(() => SetFavoriteRank(getIt()))
+      ..registerLazySingleton(() => SetGameTaste(getIt()))
+      ..registerLazySingleton(() => SetGameOwnership(getIt()))
       ..registerLazySingleton<PriceRepository>(_FakePriceRepository.new)
       ..registerLazySingleton(() => SavePriceAlert(getIt()))
       ..registerLazySingleton(() => GetGameDeal(getIt()))
@@ -260,6 +277,8 @@ void main() {
           removeGameFromLibrary: getIt(),
           setGameFavorite: getIt(),
           setFavoriteRank: getIt(),
+          setGameTaste: getIt(),
+          setGameOwnership: getIt(),
           getGamesByIds: getIt(),
           savePriceAlert: getIt(),
           getGameDeal: getIt(),

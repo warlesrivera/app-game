@@ -53,6 +53,7 @@ import '../../features/library/data/repositories/library_repository_impl.dart';
 import '../../features/library/domain/repositories/library_repository.dart';
 import '../../features/library/domain/usecases/remove_game_from_library.dart';
 import '../../features/library/domain/usecases/set_favorite_rank.dart';
+import '../../features/library/domain/usecases/set_game_collection.dart';
 import '../../features/library/domain/usecases/set_game_favorite.dart';
 import '../../features/library/domain/usecases/set_game_status.dart';
 import '../../features/library/domain/usecases/watch_library.dart';
@@ -188,6 +189,8 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton(() => RemoveGameFromLibrary(getIt()))
     ..registerLazySingleton(() => SetGameFavorite(getIt()))
     ..registerLazySingleton(() => SetFavoriteRank(getIt()))
+    ..registerLazySingleton(() => SetGameTaste(getIt()))
+    ..registerLazySingleton(() => SetGameOwnership(getIt()))
     ..registerLazySingleton(
       () => CheapSharkRemoteDataSource(cache: gameCacheBox),
     )
@@ -230,6 +233,8 @@ Future<void> configureDependencies() async {
         removeGameFromLibrary: getIt(),
         setGameFavorite: getIt(),
         setFavoriteRank: getIt(),
+        setGameTaste: getIt(),
+        setGameOwnership: getIt(),
         getGamesByIds: getIt(),
         savePriceAlert: getIt(),
         getGameDeal: getIt(),

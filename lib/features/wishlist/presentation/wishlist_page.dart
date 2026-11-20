@@ -3,5 +3,5 @@ import '../../library/presentation/library_page.dart';
 
 class WishlistPage extends LibraryPage {
   const WishlistPage({super.key})
-    : super(initialFilter: LibraryFilter.wishlist, title: 'Deseos');
+    : super(pinnedFilter: LibraryFilter.wishlist, title: 'Deseos');
 }

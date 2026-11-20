@@ -16,12 +16,15 @@ import '../../auth/presentation/cubit/auth_cubit.dart';
 import '../../auth/presentation/cubit/auth_state.dart';
 import '../../games/domain/models/game.dart';
 import '../../games/presentation/game_details/game_details_page.dart';
+import '../../library/domain/models/game_taste.dart';
 import '../../library/domain/models/library_game.dart';
 import '../../library/domain/models/library_status.dart';
 import '../../library/presentation/cubit/library_cubit.dart';
 import '../../library/presentation/cubit/library_state.dart';
 import '../domain/models/amiibo_character.dart';
 import '../domain/usecases/get_amiibo_characters.dart';
+import '../../library/presentation/widgets/console_picker.dart';
+import 'cubit/current_console_cubit.dart';
 import 'cubit/profile_cubit.dart';
 import 'cubit/profile_state.dart';
 import 'favorites_tab.dart';
@@ -151,6 +154,14 @@ class _ProfileTab extends StatelessWidget {
                     _StatCard(label: 'En Wishlist', value: stats.wishlist),
                     _StatCard(label: 'Abandonados', value: stats.abandoned),
                   ],
+                ),
+                const SizedBox(height: 24),
+                const _CurrentConsoleCard(),
+                const SizedBox(height: 24),
+                _TasteSummary(
+                  games: state is LibraryLoaded
+                      ? state.games
+                      : const <LibraryGame>[],
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -815,6 +826,91 @@ class _AvatarPickerSheetState extends State<_AvatarPickerSheet> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CurrentConsoleCard extends StatelessWidget {
+  const _CurrentConsoleCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return BlocBuilder<CurrentConsoleCubit, String?>(
+      builder: (context, slug) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'MI CONSOLA',
+              style: textTheme.labelLarge?.copyWith(
+                color: AppColors.accent,
+                letterSpacing: 2.2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'La consola en la que estás jugando ahora. Al marcar un juego como tuyo, se propone esta.',
+              style: textTheme.bodyMedium?.copyWith(
+                color: AppColors.onSurfaceMuted,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ConsolePicker(
+              selected: slug,
+              currentSlug: slug,
+              onSelected: context.read<CurrentConsoleCubit>().select,
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _TasteSummary extends StatelessWidget {
+  const _TasteSummary({required this.games});
+
+  final List<LibraryGame> games;
+
+  @override
+  Widget build(BuildContext context) {
+    final liked = [
+      for (final item in games)
+        if (item.entry.taste == GameTaste.liked) item.game.name,
+    ];
+    final disliked = [
+      for (final item in games)
+        if (item.entry.taste == GameTaste.disliked) item.game.name,
+    ];
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'GUSTO',
+          style: textTheme.labelLarge?.copyWith(
+            color: AppColors.accent,
+            letterSpacing: 2.2,
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (liked.isEmpty && disliked.isEmpty)
+          Text(
+            'En la biblioteca, marca si un juego te gustó o no. Eso mueve tu radar.',
+            style: textTheme.bodyMedium?.copyWith(
+              color: AppColors.onSurfaceMuted,
+            ),
+          )
+        else ...[
+          if (liked.isNotEmpty) Text('Me gustó: ${liked.take(6).join(', ')}'),
+          if (disliked.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text('No me gustó: ${disliked.take(6).join(', ')}'),
+          ],
+        ],
+      ],
     );
   }
 }

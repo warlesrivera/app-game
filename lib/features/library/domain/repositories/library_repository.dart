@@ -1,5 +1,7 @@
+import '../models/game_taste.dart';
 import '../models/library_entry.dart';
 import '../models/library_status.dart';
+import '../models/ownership.dart';
 
 abstract interface class LibraryRepository {
   Stream<List<LibraryEntry>> watchEntries();
@@ -18,4 +20,14 @@ abstract interface class LibraryRepository {
   Future<void> setFavoriteRank({required String gameId, int? rank});
 
   Future<void> setFavoriteOrder(List<String> gameIds);
+
+  Future<void> setTaste({required String gameId, GameTaste? taste});
+
+  Future<void> setOwnership({
+    required String gameId,
+    required bool owned,
+    OwnershipFormat? format,
+    OwnershipStore? store,
+    String? console,
+  });
 }

@@ -6,6 +6,7 @@ import '../core/network/connectivity_bloc.dart';
 import '../core/widgets/offline_banner.dart';
 import '../features/auth/presentation/cubit/auth_cubit.dart';
 import '../features/library/presentation/cubit/library_cubit.dart';
+import '../features/profile/presentation/cubit/current_console_cubit.dart';
 import 'di/injection.dart';
 import 'router/app_router.dart';
 import 'theme/app_colors.dart';
@@ -25,11 +26,13 @@ class GameVaultApp extends StatefulWidget {
 class _GameVaultAppState extends State<GameVaultApp> {
   late final AppRouter _appRouter = AppRouter(authCubit: widget.authCubit);
   late final AppearanceCubit _appearance = AppearanceCubit();
+  late final CurrentConsoleCubit _console = CurrentConsoleCubit();
 
   @override
   void dispose() {
     _appRouter.dispose();
     _appearance.close();
+    _console.close();
     super.dispose();
   }
 
@@ -39,6 +42,7 @@ class _GameVaultAppState extends State<GameVaultApp> {
       providers: [
         BlocProvider.value(value: widget.authCubit),
         BlocProvider.value(value: _appearance),
+        BlocProvider.value(value: _console),
         if (getIt.isRegistered<LibraryCubit>())
           BlocProvider(create: (_) => getIt<LibraryCubit>()..start()),
         if (getIt.isRegistered<ConnectivityBloc>())

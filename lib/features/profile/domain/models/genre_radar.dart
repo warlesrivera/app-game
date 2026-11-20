@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../library/domain/models/game_taste.dart';
 import '../../../library/domain/models/library_game.dart';
 import '../../../library/domain/models/library_status.dart';
 
@@ -40,8 +41,17 @@ class GenreRadar extends Equatable {
   factory GenreRadar.fromLibrary(Iterable<LibraryGame> games) {
     final counts = {for (final label in labels) label: 0};
     for (final item in games) {
-      if (item.entry.status != LibraryStatus.playing &&
-          item.entry.status != LibraryStatus.completed) {
+      var weight = 0;
+      if (item.entry.status == LibraryStatus.playing ||
+          item.entry.status == LibraryStatus.completed) {
+        weight += 1;
+      }
+      if (item.entry.taste == GameTaste.liked) {
+        weight += 2;
+      } else if (item.entry.taste == GameTaste.disliked) {
+        weight -= 2;
+      }
+      if (weight == 0) {
         continue;
       }
       for (final genre in item.game.genres) {
@@ -49,7 +59,13 @@ class GenreRadar extends Equatable {
         if (axis == null) {
           continue;
         }
-        counts[axis] = (counts[axis] ?? 0) + 1;
+        counts[axis] = (counts[axis] ?? 0) + weight;
+      }
+    }
+
+    for (final label in labels) {
+      if ((counts[label] ?? 0) < 0) {
+        counts[label] = 0;
       }
     }
 

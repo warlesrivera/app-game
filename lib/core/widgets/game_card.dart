@@ -200,6 +200,7 @@ class GameListRow extends StatelessWidget {
     required this.onTap,
     this.priceLabel,
     this.priceLoading = false,
+    this.footer,
   });
 
   final Game game;
@@ -207,6 +208,7 @@ class GameListRow extends StatelessWidget {
   final VoidCallback onTap;
   final String? priceLabel;
   final bool priceLoading;
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -257,6 +259,10 @@ class GameListRow extends StatelessWidget {
                       names: game.platforms,
                       size: 16,
                     ),
+                    if (footer != null) ...[
+                      const SizedBox(height: 8),
+                      GestureDetector(onTap: () {}, child: footer!),
+                    ],
                   ],
                 ),
               ),

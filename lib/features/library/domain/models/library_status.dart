@@ -25,7 +25,8 @@ enum LibraryFilter {
   playing,
   completed,
   wishlist,
-  abandoned;
+  abandoned,
+  owned;
 
   String get label => switch (this) {
     LibraryFilter.all => 'Todos',
@@ -33,6 +34,7 @@ enum LibraryFilter {
     LibraryFilter.completed => 'Completados',
     LibraryFilter.wishlist => 'Wishlist',
     LibraryFilter.abandoned => 'Abandonados',
+    LibraryFilter.owned => 'Los que tengo',
   };
 
   bool matches(LibraryStatus status) {
@@ -42,6 +44,7 @@ enum LibraryFilter {
       LibraryFilter.completed => status == LibraryStatus.completed,
       LibraryFilter.wishlist => status == LibraryStatus.wishlist,
       LibraryFilter.abandoned => status == LibraryStatus.abandoned,
+      LibraryFilter.owned => false,
     };
   }
 }

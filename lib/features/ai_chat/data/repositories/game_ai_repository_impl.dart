@@ -112,6 +112,11 @@ class GameAIRepositoryImpl implements GameAIRepository {
     required String favoriteGenre,
     required List<String> topFavorites,
     required Map<String, int> genreCounts,
+    List<String> liked = const [],
+    List<String> disliked = const [],
+    List<String> playingNames = const [],
+    List<String> completedNames = const [],
+    List<String> abandonedNames = const [],
   }) {
     return _provider.generatePlayerProfile(
       completed: completed,
@@ -120,6 +125,11 @@ class GameAIRepositoryImpl implements GameAIRepository {
       favoriteGenre: favoriteGenre,
       topFavorites: topFavorites,
       genreCounts: genreCounts,
+      liked: liked,
+      disliked: disliked,
+      playingNames: playingNames,
+      completedNames: completedNames,
+      abandonedNames: abandonedNames,
     );
   }
 }

@@ -127,10 +127,21 @@ class PlayerAnalysis extends Equatable {
       return a.game.id.compareTo(b.game.id);
     });
 
+    final tastes = <String>[];
+    for (final item in games) {
+      final taste = item.entry.taste;
+      if (taste != null) {
+        tastes.add('${item.game.id}:${taste.name}');
+      }
+    }
+    tastes.sort();
+
     return [
+      'v:psych',
       'c:${completed.join(',')}',
       'i:${incomplete.join(',')}',
       'f:${favorites.map((item) => item.game.id).join(',')}',
+      't:${tastes.join(',')}',
     ].join('|');
   }
 

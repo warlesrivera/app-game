@@ -1,5 +1,7 @@
+import '../../domain/models/game_taste.dart';
 import '../../domain/models/library_entry.dart';
 import '../../domain/models/library_status.dart';
+import '../../domain/models/ownership.dart';
 import '../../domain/repositories/library_repository.dart';
 import '../datasources/library_remote_datasource.dart';
 
@@ -40,5 +42,27 @@ class LibraryRepositoryImpl implements LibraryRepository {
   @override
   Future<void> setFavoriteOrder(List<String> gameIds) {
     return _remote.setFavoriteOrder(gameIds);
+  }
+
+  @override
+  Future<void> setTaste({required String gameId, GameTaste? taste}) {
+    return _remote.setTaste(gameId: gameId, taste: taste);
+  }
+
+  @override
+  Future<void> setOwnership({
+    required String gameId,
+    required bool owned,
+    OwnershipFormat? format,
+    OwnershipStore? store,
+    String? console,
+  }) {
+    return _remote.setOwnership(
+      gameId: gameId,
+      owned: owned,
+      format: format,
+      store: store,
+      console: console,
+    );
   }
 }

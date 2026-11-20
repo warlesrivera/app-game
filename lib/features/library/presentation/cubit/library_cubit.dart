@@ -6,6 +6,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../auth/domain/entities/app_user.dart';
 import '../../../auth/domain/usecases/watch_auth_state.dart';
+import '../../../games/domain/models/game.dart';
 import '../../../games/domain/usecases/get_games_by_ids.dart';
 import '../../../prices/domain/models/game_deal.dart';
 import '../../../prices/domain/usecases/get_game_deal.dart';
@@ -13,9 +14,12 @@ import '../../../prices/domain/usecases/save_price_alert.dart';
 import '../../../prices/data/wishlist_price_snapshot.dart';
 import '../../domain/models/library_entry.dart';
 import '../../domain/models/library_game.dart';
+import '../../domain/models/game_taste.dart';
 import '../../domain/models/library_status.dart';
+import '../../domain/models/ownership.dart';
 import '../../domain/usecases/remove_game_from_library.dart';
 import '../../domain/usecases/set_favorite_rank.dart';
+import '../../domain/usecases/set_game_collection.dart';
 import '../../domain/usecases/set_game_favorite.dart';
 import '../../domain/usecases/set_game_status.dart';
 import '../../domain/usecases/watch_library.dart';
@@ -29,6 +33,8 @@ class LibraryCubit extends Cubit<LibraryState> {
     required RemoveGameFromLibrary removeGameFromLibrary,
     required SetGameFavorite setGameFavorite,
     required SetFavoriteRank setFavoriteRank,
+    required SetGameTaste setGameTaste,
+    required SetGameOwnership setGameOwnership,
     required GetGamesByIds getGamesByIds,
     required SavePriceAlert savePriceAlert,
     required GetGameDeal getGameDeal,
@@ -38,6 +44,8 @@ class LibraryCubit extends Cubit<LibraryState> {
        _removeGameFromLibrary = removeGameFromLibrary,
        _setGameFavorite = setGameFavorite,
        _setFavoriteRank = setFavoriteRank,
+       _setGameTaste = setGameTaste,
+       _setGameOwnership = setGameOwnership,
        _getGamesByIds = getGamesByIds,
        _savePriceAlert = savePriceAlert,
        _getGameDeal = getGameDeal,
@@ -49,6 +57,8 @@ class LibraryCubit extends Cubit<LibraryState> {
   final RemoveGameFromLibrary _removeGameFromLibrary;
   final SetGameFavorite _setGameFavorite;
   final SetFavoriteRank _setFavoriteRank;
+  final SetGameTaste _setGameTaste;
+  final SetGameOwnership _setGameOwnership;
   final GetGamesByIds _getGamesByIds;
   final SavePriceAlert _savePriceAlert;
   final GetGameDeal _getGameDeal;
@@ -111,8 +121,12 @@ class LibraryCubit extends Cubit<LibraryState> {
       final byId = {for (final game in games) game.id: game};
       final hydrated = [
         for (final entry in entries)
-          if (byId[entry.gameId] != null)
-            LibraryGame(game: byId[entry.gameId]!, entry: entry),
+          LibraryGame(
+            game:
+                byId[entry.gameId] ??
+                Game(id: entry.gameId, name: 'Juego guardado'),
+            entry: entry,
+          ),
       ];
       if (isClosed) {
         return;
@@ -332,6 +346,26 @@ class LibraryCubit extends Cubit<LibraryState> {
     required List<String> stores,
   }) {
     return _savePriceAlert(gameId: gameId, enabled: enabled, stores: stores);
+  }
+
+  Future<void> setTaste({required String gameId, GameTaste? taste}) {
+    return _setGameTaste(gameId: gameId, taste: taste);
+  }
+
+  Future<void> setOwnership({
+    required String gameId,
+    required bool owned,
+    OwnershipFormat? format,
+    OwnershipStore? store,
+    String? console,
+  }) {
+    return _setGameOwnership(
+      gameId: gameId,
+      owned: owned,
+      format: format,
+      store: store,
+      console: console,
+    );
   }
 
   Future<void> retry() async {

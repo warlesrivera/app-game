@@ -122,7 +122,7 @@ class HiveGameLocalCache implements GameLocalCache {
 
   String _searchKey(String query) {
     final normalized = query.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
-    return 'search_$normalized';
+    return 'search_v2_$normalized';
   }
 
   String _gameKey(String id) => 'game_$id';

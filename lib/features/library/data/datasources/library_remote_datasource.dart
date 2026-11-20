@@ -4,7 +4,9 @@ import 'package:firebase_core/firebase_core.dart';
 
 import '../../../../core/errors/failures.dart';
 import '../../domain/models/library_entry.dart';
+import '../../domain/models/game_taste.dart';
 import '../../domain/models/library_status.dart';
+import '../../domain/models/ownership.dart';
 
 class LibraryRemoteDataSource {
   LibraryRemoteDataSource({FirebaseFirestore? firestore, FirebaseAuth? auth})
@@ -190,6 +192,38 @@ class LibraryRemoteDataSource {
     }, SetOptions(merge: true));
   }
 
+  Future<void> setTaste({required String gameId, GameTaste? taste}) {
+    return _games.doc(gameId).set({
+      'taste': taste?.name ?? FieldValue.delete(),
+      'enjoyed': taste == GameTaste.liked,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> setOwnership({
+    required String gameId,
+    required bool owned,
+    OwnershipFormat? format,
+    OwnershipStore? store,
+    String? console,
+  }) {
+    return _games.doc(gameId).set({
+      'owned': owned,
+      'ownershipFormat': owned && format != null
+          ? format.name
+          : FieldValue.delete(),
+      'ownershipStore': owned &&
+              format == OwnershipFormat.digital &&
+              store != null
+          ? store.name
+          : FieldValue.delete(),
+      'ownershipConsole': owned && console != null
+          ? console
+          : FieldValue.delete(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   LibraryEntry _fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
     final updatedAt = data['updatedAt'];
@@ -209,6 +243,17 @@ class LibraryRemoteDataSource {
           const [],
       isFavorite: data['isFavorite'] as bool? ?? false,
       favoriteRank: _parseRank(data['favoriteRank']),
+      taste:
+          GameTaste.tryParse(data['taste'] as String?) ??
+          ((data['enjoyed'] as bool? ?? false) ? GameTaste.liked : null),
+      owned: data['owned'] as bool? ?? false,
+      ownershipFormat: OwnershipFormat.tryParse(
+        data['ownershipFormat'] as String?,
+      ),
+      ownershipStore: OwnershipStore.tryParse(
+        data['ownershipStore'] as String?,
+      ),
+      ownershipConsole: data['ownershipConsole'] as String?,
     );
   }
 

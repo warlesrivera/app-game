@@ -54,7 +54,7 @@ class PlayerLoreCard extends StatelessWidget {
               )
             else if (current == null)
               Text(
-                'Cuando tengas partidas suficientes, Gemini escribirá tu leyenda gamer aquí.',
+                'Cuando tengas partidas, aquí verás cómo juegas: qué te gusta y qué buscas.',
                 style: textTheme.bodyMedium?.copyWith(
                   color: AppColors.onSurfaceMuted,
                 ),
@@ -62,14 +62,17 @@ class PlayerLoreCard extends StatelessWidget {
             else ...[
               Text(
                 current.title,
-                style: textTheme.titleMedium?.copyWith(
+                style: textTheme.labelLarge?.copyWith(
                   color: AppColors.accent,
                   fontWeight: FontWeight.w800,
                 ),
               ),
               if (current.summary.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                Text(current.summary, style: textTheme.bodyMedium),
+                Text(
+                  current.summary,
+                  style: textTheme.bodyLarge?.copyWith(height: 1.45),
+                ),
               ],
               if (current.details.isNotEmpty) ...[
                 const SizedBox(height: 12),
@@ -169,7 +172,7 @@ Future<void> showPlayerAnalysisDetails(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Por qué este perfil',
+                'Tu perfil de jugador',
                 style: textTheme.labelLarge?.copyWith(
                   color: AppColors.accent,
                   letterSpacing: 1.6,

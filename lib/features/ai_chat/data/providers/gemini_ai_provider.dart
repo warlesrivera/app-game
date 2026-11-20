@@ -157,6 +157,11 @@ class GeminiAiProvider {
     required String favoriteGenre,
     required List<String> topFavorites,
     required Map<String, int> genreCounts,
+    List<String> liked = const [],
+    List<String> disliked = const [],
+    List<String> playingNames = const [],
+    List<String> completedNames = const [],
+    List<String> abandonedNames = const [],
   }) {
     if (!isAvailable) {
       return Future<String?>.value(null);
@@ -178,15 +183,34 @@ class GeminiAiProvider {
         .map((entry) => '${entry.key}:${entry.value}')
         .join(',');
 
+    final likedLine = liked.isEmpty ? 'ninguno' : liked.take(6).join(', ');
+    final dislikedLine = disliked.isEmpty
+        ? 'ninguno'
+        : disliked.take(6).join(', ');
+
+    String list(List<String> names) =>
+        names.isEmpty ? 'ninguno' : names.take(8).join(', ');
+
     return _generatePlain(
       system:
-          'Analista de videojuegos. SOLO JSON en español, sin markdown: '
-          '"title" (corto), "summary" (máx 2 líneas), '
-          '"details" (1 o 2 párrafos: por qué, con favoritos y ritmo).',
+          'Eres un psicólogo del videojuego. Describes a la persona como jugador. '
+          'No recomiendas juegos ni usas un título de juego como nombre del perfil. '
+          'Responde SOLO JSON en español, sin markdown, con estas claves: '
+          '"title": arquetipo del jugador en 2 a 5 palabras, nunca el nombre de un juego; '
+          '"summary": 3 o 4 frases sobre qué le gusta, qué busca al jugar y cómo se relaciona con los juegos; '
+          '"details": retrato psicológico en 2 párrafos: motivación, ritmo, historia frente a sistemas, '
+          'por qué puede abandonar un juego sin que deje de gustarle, y el tipo de experiencia que persigue. '
+          'Cita juegos de los datos solo como evidencia de gusto. No inventes títulos que no estén en los datos.',
       prompt:
-          'Perfil: $completed ok, $playing jugando, $abandoned off. '
-          'Género: $favoriteGenre. Top: ${genres.isEmpty ? '-' : genres}. '
-          'Fav: $favorites.',
+          'Completados: $completed. Jugando ahora: $playing. Abandonados: $abandoned. '
+          'Género que más pesa: $favoriteGenre. '
+          'Géneros: ${genres.isEmpty ? 'sin datos' : genres}. '
+          'Favoritos: $favorites. '
+          'Le gustaron: $likedLine. '
+          'No le gustaron: $dislikedLine. '
+          'Está jugando: ${list(playingNames)}. '
+          'Terminó: ${list(completedNames)}. '
+          'Dejó a medias: ${list(abandonedNames)}.',
     );
   }
 

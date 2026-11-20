@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../library/domain/models/game_taste.dart';
 import '../../../library/domain/models/library_game.dart';
+import '../../../library/domain/models/library_status.dart';
 import '../../../library/presentation/cubit/library_state.dart';
 import '../../data/datasources/player_analysis_remote_datasource.dart';
 import '../../domain/models/genre_radar.dart';
@@ -59,7 +61,9 @@ class ProfileCubit extends Cubit<ProfileInsightState> {
             clearError: true,
           ),
         );
-        if (saved == null && radar.hasData) {
+        final outdated =
+            saved != null && !saved.fingerprint.startsWith('v:psych');
+        if ((saved == null || outdated) && radar.hasData) {
           await refreshAnalysis();
         }
         return;
@@ -116,6 +120,21 @@ class ProfileCubit extends Cubit<ProfileInsightState> {
 
     try {
       final favorites = library.favoriteGames;
+      final liked = [
+        for (final item in games)
+          if (item.entry.taste == GameTaste.liked) item.game.name,
+      ];
+      final disliked = [
+        for (final item in games)
+          if (item.entry.taste == GameTaste.disliked) item.game.name,
+      ];
+      List<String> namesFor(LibraryStatus status) {
+        return [
+          for (final item in games)
+            if (item.entry.status == status) item.game.name,
+        ].take(8).toList();
+      }
+
       final analysis = await _generatePlayerProfile(
         completed: library.stats.completed,
         abandoned: library.stats.abandoned,
@@ -124,6 +143,11 @@ class ProfileCubit extends Cubit<ProfileInsightState> {
         topFavorites: [for (final item in favorites.take(5)) item.game.name],
         genreCounts: {for (final axis in radar.axes) axis.label: axis.count},
         fingerprint: fingerprint,
+        liked: liked,
+        disliked: disliked,
+        playingNames: namesFor(LibraryStatus.playing),
+        completedNames: namesFor(LibraryStatus.completed),
+        abandonedNames: namesFor(LibraryStatus.abandoned),
       );
       if (isClosed) {
         return;

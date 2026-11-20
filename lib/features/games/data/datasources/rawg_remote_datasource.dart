@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/api_client.dart';
 import '../../domain/models/game.dart';
+import '../../domain/models/platform_search.dart';
 
 class RawgRemoteDataSource {
   RawgRemoteDataSource(this._apiClient);
@@ -37,11 +38,21 @@ class RawgRemoteDataSource {
 
   Future<List<Game>> searchGames(String query) async {
     try {
+      final platform = PlatformSearch.resolve(query);
       final response = await _apiClient.dio.get<Map<String, dynamic>>(
         '/games',
         queryParameters: {
-          'search': query,
-          'page_size': _pageSize,
+          'page_size': platform != null && platform.isCatalog ? 40 : _pageSize,
+          if (platform == null) 'search': query,
+          if (platform != null && !platform.isCatalog) 'search': platform.text,
+          if (platform?.platforms != null) 'platforms': platform!.platforms,
+          if (platform?.parentPlatform != null)
+            'parent_platforms': platform!.parentPlatform,
+          if (platform?.dates != null) 'dates': platform!.dates,
+          if (platform != null && platform.isCatalog) ...const {
+            'ordering': '-added',
+            'exclude_additions': true,
+          },
         },
       );
 

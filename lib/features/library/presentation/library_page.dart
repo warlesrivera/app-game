@@ -8,31 +8,21 @@ import '../../../core/widgets/game_card.dart';
 import '../../../core/widgets/game_grid.dart';
 import '../../games/presentation/game_details/game_details_page.dart';
 import '../../gaming_advisor/presentation/pages/gaming_advisor_page.dart';
+import 'widgets/collection_panel.dart';
 import '../domain/models/library_status.dart';
 import 'cubit/library_cubit.dart';
 import 'cubit/library_state.dart';
 
 class LibraryPage extends StatelessWidget {
-  const LibraryPage({
-    super.key,
-    this.initialFilter = LibraryFilter.all,
-    this.title = 'Biblioteca',
-  });
+  const LibraryPage({super.key, this.pinnedFilter, this.title = 'Biblioteca'});
 
-  final LibraryFilter initialFilter;
+  /// Filtro fijo de esta pantalla. No escribe el filtro compartido del cubit,
+  /// porque Biblioteca y Deseos viven a la vez en el IndexedStack.
+  final LibraryFilter? pinnedFilter;
   final String title;
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<LibraryCubit>();
-    if (cubit.state.filter != initialFilter) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) {
-          cubit.setFilter(initialFilter);
-        }
-      });
-    }
-
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -129,7 +119,7 @@ class LibraryPage extends StatelessWidget {
                 ),
               ),
             const SizedBox(height: 8),
-            const Expanded(child: _LibraryBody()),
+            Expanded(child: _LibraryBody(pinnedFilter: pinnedFilter)),
           ],
         ),
       ),
@@ -138,14 +128,19 @@ class LibraryPage extends StatelessWidget {
 }
 
 class _LibraryBody extends StatelessWidget {
-  const _LibraryBody();
+  const _LibraryBody({this.pinnedFilter});
+
+  final LibraryFilter? pinnedFilter;
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<LibraryCubit, LibraryState>(
       builder: (context, state) {
         return switch (state) {
-          LibraryLoaded() => _LibraryContent(state: state),
+          LibraryLoaded() => _LibraryContent(
+            state: state,
+            pinnedFilter: pinnedFilter,
+          ),
           LibraryError(:final message) => EmptyState(
             icon: Icons.wifi_off_rounded,
             title: 'No se pudo cargar',
@@ -161,21 +156,27 @@ class _LibraryBody extends StatelessWidget {
 }
 
 class _LibraryContent extends StatelessWidget {
-  const _LibraryContent({required this.state});
+  const _LibraryContent({required this.state, this.pinnedFilter});
 
   final LibraryLoaded state;
+  final LibraryFilter? pinnedFilter;
 
   @override
   Widget build(BuildContext context) {
-    final games = state.visibleGames;
+    final filter = pinnedFilter ?? state.filter;
+    final games = state.gamesFor(filter);
     if (games.isEmpty) {
+      final lookingAtOwned = filter == LibraryFilter.owned;
       return EmptyState(
         icon: Icons.sports_esports_rounded,
-        title: 'Tu bóveda está vacía',
-        message:
-            'Busca un juego y márcalo como jugando, completado o wishlist.',
-        actionLabel: 'Ir a buscar',
-        onAction: () => context.go('/search'),
+        title: lookingAtOwned
+            ? 'Aún no marcaste juegos que ya tienes'
+            : 'Tu bóveda está vacía',
+        message: lookingAtOwned
+            ? 'Abre un juego y activa «Ya lo tengo».'
+            : 'Busca un juego y márcalo como jugando, completado o wishlist.',
+        actionLabel: lookingAtOwned ? null : 'Ir a buscar',
+        onAction: lookingAtOwned ? null : () => context.go('/search'),
       );
     }
 
@@ -189,12 +190,24 @@ class _LibraryContent extends StatelessWidget {
         itemBuilder: (context, index) {
           final item = games[index];
           final heroTag = 'library-${item.game.id}';
-          final showDeal = state.filter == LibraryFilter.wishlist;
+          final showDeal =
+              filter == LibraryFilter.wishlist && !item.entry.owned;
+          final caption = item.entry.ownershipLabel ?? item.entry.taste?.label;
           return GameListRow(
             game: item.game,
             heroTag: heroTag,
-            priceLabel: showDeal ? state.dealFor(item.game.id)?.label : null,
+            priceLabel: showDeal ? state.dealFor(item.game.id)?.label : caption,
             priceLoading: showDeal && state.isDealLoading(item.game.id),
+            footer: TasteChoice(
+              compact: true,
+              taste: item.entry.taste,
+              onChanged: (taste) {
+                context.read<LibraryCubit>().setTaste(
+                  gameId: item.game.id,
+                  taste: taste,
+                );
+              },
+            ),
             onTap: () => openGameDetails(
               context,
               item.game,
@@ -211,11 +224,12 @@ class _LibraryContent extends StatelessWidget {
       itemBuilder: (context, index) {
         final item = games[index];
         final heroTag = 'library-${item.game.id}';
-        final showDeal = state.filter == LibraryFilter.wishlist;
+        final showDeal = filter == LibraryFilter.wishlist && !item.entry.owned;
+        final caption = item.entry.ownershipLabel ?? item.entry.taste?.label;
         return GameGridCard(
           game: item.game,
           heroTag: heroTag,
-          priceLabel: showDeal ? state.dealFor(item.game.id)?.label : null,
+          priceLabel: showDeal ? state.dealFor(item.game.id)?.label : caption,
           priceLoading: showDeal && state.isDealLoading(item.game.id),
           onTap: () => openGameDetails(
             context,

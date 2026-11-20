@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../../prices/domain/models/game_deal.dart';
+import '../../domain/models/game_taste.dart';
 import '../../domain/models/library_entry.dart';
 import '../../domain/models/library_game.dart';
 import '../../domain/models/library_status.dart';
@@ -85,8 +86,15 @@ final class LibraryLoaded extends LibraryState {
   @override
   LibraryStats get stats => LibraryStats.fromEntries(entries);
 
-  List<LibraryGame> get visibleGames {
-    return games.where((item) => filter.matches(item.entry.status)).toList();
+  List<LibraryGame> get visibleGames => gamesFor(filter);
+
+  List<LibraryGame> gamesFor(LibraryFilter view) {
+    return games.where((item) {
+      if (view == LibraryFilter.owned) {
+        return item.entry.owned;
+      }
+      return view.matches(item.entry.status);
+    }).toList();
   }
 
   @override
@@ -125,7 +133,16 @@ final class LibraryLoaded extends LibraryState {
         if (genre.trim().isEmpty) {
           continue;
         }
-        counts[genre] = (counts[genre] ?? 0) + 1;
+        var weight = item.entry.status == LibraryStatus.wishlist ? 0 : 1;
+        if (item.entry.taste == GameTaste.liked) {
+          weight += 2;
+        } else if (item.entry.taste == GameTaste.disliked) {
+          weight = 0;
+        }
+        if (weight == 0) {
+          continue;
+        }
+        counts[genre] = (counts[genre] ?? 0) + weight;
       }
     }
     final ranked = counts.entries.toList()

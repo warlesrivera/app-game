@@ -14,6 +14,7 @@ import '../../../../core/widgets/in_app_browser_page.dart';
 import '../../../../core/widgets/shimmer.dart';
 import '../../../gaming_advisor/presentation/completed_feedback_sheet.dart';
 import '../../../gaming_advisor/presentation/pages/gaming_advisor_page.dart';
+import '../../../library/presentation/widgets/collection_panel.dart';
 import '../../../library/domain/models/library_entry.dart';
 import '../../../library/domain/models/library_status.dart';
 import '../../../library/presentation/cubit/library_cubit.dart';
@@ -116,6 +117,7 @@ class GameDetailsPage extends StatelessWidget {
                         _DealBanner(state: state),
                         const SizedBox(height: 20),
                         _StatusActions(gameId: game.id, gameName: game.name),
+                        LibraryCollectionPanel(gameId: game.id),
                         const SizedBox(height: 16),
                         _PriceAlertButton(game: game),
                         const SizedBox(height: 12),

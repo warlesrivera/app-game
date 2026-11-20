@@ -42,7 +42,7 @@ class SearchPage extends StatelessWidget {
                 ),
                 cursorColor: AppColors.accent,
                 decoration: InputDecoration(
-                  hintText: 'Busca un juego',
+                  hintText: 'Busca un juego o una consola',
                   hintStyle: textTheme.bodyLarge,
                   prefixIcon: Icon(
                     Icons.search_rounded,
@@ -97,7 +97,7 @@ class _SearchHint extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Text(
-        'Escribe para descubrir juegos.',
+        'Escribe un juego o una consola, como PSP o Switch 2.',
         style: Theme.of(context).textTheme.bodyLarge,
       ),
     );

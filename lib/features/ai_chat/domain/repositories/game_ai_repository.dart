@@ -23,5 +23,10 @@ abstract class GameAIRepository {
     required String favoriteGenre,
     required List<String> topFavorites,
     required Map<String, int> genreCounts,
+    List<String> liked = const [],
+    List<String> disliked = const [],
+    List<String> playingNames = const [],
+    List<String> completedNames = const [],
+    List<String> abandonedNames = const [],
   });
 }
